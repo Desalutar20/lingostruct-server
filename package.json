@@ -1,0 +1,27 @@
+{
+  "name": "lingostruct-server",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start:dev": "tsx --watch ./src/main.ts",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
+  },
+  "dependencies": {
+    "close-with-grace": "^2.5.0",
+    "fastify": "^5.11.2",
+    "js-yaml": "^5.2.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^26.1.2",
+    "oxfmt": "^0.62.0",
+    "oxlint": "^1.77.0",
+    "tsx": "^4.23.10",
+    "typescript": "^7.0.2"
+  }
+}
