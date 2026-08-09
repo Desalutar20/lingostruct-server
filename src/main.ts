@@ -1,5 +1,5 @@
 import { createApp } from "./app.js";
-import { loadConfig } from "./infrastructure/config.js";
+import { loadConfig } from "@/infrastructure/config/index.js";
 import closeWithGrace from "close-with-grace";
 
 const deepFreeze = (o: any) => {

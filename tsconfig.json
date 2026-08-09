@@ -4,6 +4,11 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "sourceMap": true,
-    "types": ["node"]
-  }
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "scripts", "seeds"],
+  "exclude": ["node_modules", "dist", "migrations", "tests"]
 }
