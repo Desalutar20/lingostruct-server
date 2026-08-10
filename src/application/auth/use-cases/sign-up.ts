@@ -7,14 +7,17 @@ import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
 import { Outbox } from "@/application/abstractions/database/outbox/outbox.js";
 import { OutboxType } from "@/application/abstractions/database/outbox/outbox-type.js";
-import { UserAlreadyExistsException } from "@/domain/users/exceptions/user-already-exists.exception.js";
 import { Password } from "@/domain/users/password.js";
 import { IPasswordHasher } from "@/application/abstractions/security/password-hasher.interface.js";
 import { HashedPassword } from "@/domain/users/hashed-password.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
-import { EmailVerificationOutboxData } from "@/application/abstractions/database/outbox/email-verification-outbox-data.type.js";
 import { ITokenGenerator } from "@/application/abstractions/security/token-generator.interface.js";
 import { ICache } from "@/application/abstractions/cache/cache.interface.js";
+import { err, ok } from "neverthrow";
+import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
+import { OutboxEmailData } from "@/application/abstractions/database/outbox/outbox-data.type.js";
+import { ApplicationConfig } from "@/application/config/application.config.js";
+import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 
 export class SignUpCommand implements ICommand {
   constructor(
@@ -26,12 +29,19 @@ export class SignUpCommand implements ICommand {
 }
 
 export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
+  private readonly accountVerificationTTl: PositiveInt;
+
   constructor(
     private readonly unitOfWork: IUnitOfWork,
     private readonly passwordHasher: IPasswordHasher,
     private readonly tokenGenerator: ITokenGenerator,
     private readonly cache: ICache,
-  ) {}
+    applicationConfig: ApplicationConfig,
+  ) {
+    this.accountVerificationTTl = PositiveInt.create(
+      applicationConfig.accountVerificationTTLMinutes * 60,
+    )._unsafeUnwrap();
+  }
 
   handle(command: SignUpCommand): ResultAsync<void> {
     return this.passwordHasher
@@ -48,30 +58,32 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
         );
 
         const token = this.tokenGenerator.generate();
-        return this.cache.set(`verification-token:${token}`, user.id.value).andThen(() =>
-          this.unitOfWork.execute(
-            async ({ userRepository, outboxRepository }, { commit, rollback }) => {
-              try {
-                const outbox = Outbox.create(
-                  OutboxType.Email,
-                  new EmailVerificationOutboxData(user.email.value, token),
-                );
+        return this.cache
+          .set(authCacheKeys.verificationToken(token), user.id.value, this.accountVerificationTTl)
+          .andThen(() =>
+            this.unitOfWork.execute(
+              ({ userRepository, outboxRepository }, { commit, rollback }) => {
+                const outboxEmailData: OutboxEmailData = {
+                  type: "accountVerification",
+                  email: user.email.value,
+                  token,
+                };
+                const outbox = Outbox.create(OutboxType.Email, outboxEmailData);
 
-                await userRepository.create(user);
-                await outboxRepository.create(outbox);
-
-                await commit();
-              } catch (error) {
-                await rollback();
-                if (error instanceof UserAlreadyExistsException) {
-                  return;
-                }
-
-                throw error;
-              }
-            },
-          ),
-        );
+                return userRepository
+                  .create(user)
+                  .andThen(() => outboxRepository.create(outbox))
+                  .andThen(() => commit())
+                  .orElse((error) =>
+                    rollback().andThen(() =>
+                      error.type === "Failure" && error.code === "UserAlreadyExists"
+                        ? ok()
+                        : err(error),
+                    ),
+                  );
+              },
+            ),
+          );
       });
   }
 }

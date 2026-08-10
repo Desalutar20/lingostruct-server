@@ -15,8 +15,8 @@ export class UnitOfWork implements IUnitOfWork {
   execute<T>(
     action: (
       repositories: { userRepository: IUserRepository; outboxRepository: IOutboxRepository },
-      actions: { commit: () => Promise<void>; rollback: () => Promise<void> },
-    ) => Promise<T>,
+      actions: { commit: () => ResultAsync<void>; rollback: () => ResultAsync<void> },
+    ) => ResultAsync<T>,
   ): ResultAsync<T> {
     return fromPromise(this.kysely.startTransaction().execute(), (err) =>
       internal("Error while starting transaction", err),
@@ -24,15 +24,18 @@ export class UnitOfWork implements IUnitOfWork {
       const userRepository = new UserRepository(trx);
       const outboxRepository = new OutboxRepository(trx);
 
-      return fromPromise(
-        action(
-          { userRepository, outboxRepository },
-          {
-            commit: async () => await trx.commit().execute(),
-            rollback: async () => await trx.rollback().execute(),
-          },
-        ),
-        (err) => internal("Error while execution action in transaction", err),
+      return action(
+        { userRepository, outboxRepository },
+        {
+          commit: () =>
+            fromPromise(trx.commit().execute(), (err) =>
+              internal("Failed to commit database transaction", err),
+            ),
+          rollback: () =>
+            fromPromise(trx.rollback().execute(), (err) =>
+              internal("Failed to rollback database transaction", err),
+            ),
+        },
       );
     });
   }

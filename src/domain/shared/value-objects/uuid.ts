@@ -1,9 +1,9 @@
 import { err, ok } from "neverthrow";
-import { StringValue } from "./string-value.js";
+import { NonEmptyString } from "./non-empty-string.js";
 import { validation } from "@/domain/abstractions/errors.js";
 import { Result } from "@/domain/abstractions/result.js";
 
-export class UUID extends StringValue {
+export class UUID extends NonEmptyString {
   protected constructor(value: string) {
     super(value);
   }

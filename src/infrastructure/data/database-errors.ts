@@ -1,5 +1,5 @@
-import { UserAlreadyExistsException } from "@/domain/users/exceptions/user-already-exists.exception.js";
 import { UserConstraints } from "./users/user-constraints.js";
+import { AppError, failure, internal } from "@/domain/abstractions/errors.js";
 
 const PostgresErrorCode = {
   UniqueViolation: "23505",
@@ -17,18 +17,25 @@ type DatabaseError = {
 const isDatabaseError = (error: unknown): error is DatabaseError => {
   const err = error as DatabaseError;
 
-  return err !== undefined && err.table !== undefined && err.detail !== undefined;
+  return (
+    err !== undefined &&
+    err.table !== undefined &&
+    err.detail !== undefined &&
+    err.code !== undefined
+  );
 };
 
-export const throwDatabaseError = (error: unknown) => {
-  if (!isDatabaseError(error)) throw error;
+export const mapDbErrorToAppError = (error: unknown, context = ""): AppError => {
+  const message = context ? `Unexpected database error - ${context}` : "Unexpected database error";
+
+  if (!isDatabaseError(error)) return internal(message, error);
 
   if (
     error.code === PostgresErrorCode.UniqueViolation &&
     error.constraint === UserConstraints.EmailUnique
   ) {
-    throw new UserAlreadyExistsException();
+    return failure("User with this email already exists", "USER_ALREADY_EXISTS");
   }
 
-  throw error;
+  return internal(message, error);
 };

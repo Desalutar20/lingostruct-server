@@ -18,7 +18,7 @@ export const setupTestDatabase = async (config: DatabaseConfig) => {
   const isWindows = process.platform === `win32`;
   const npm = isWindows ? `npm.cmd` : `npm`;
 
-  execSync(`${npm} run migration:run`, {
+  execSync(`${npm} run migration:run -s`, {
     env: {
       ...process.env,
       DATABASE_URL: `postgresql://${config.user}:${config.password}@${config.host}:${config.port}/${config.database}`,

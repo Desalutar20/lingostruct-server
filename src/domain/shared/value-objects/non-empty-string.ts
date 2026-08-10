@@ -2,14 +2,14 @@ import { validation } from "@/domain/abstractions/errors.js";
 import { err, ok } from "neverthrow";
 import { Result } from "@/domain/abstractions/result.js";
 
-export class StringValue {
+export class NonEmptyString {
   protected readonly _value: string;
 
   protected constructor(value: string) {
     this._value = value;
   }
 
-  public equals(other: StringValue): boolean {
+  public equals(other: NonEmptyString): boolean {
     return this.constructor === other.constructor && this._value === other._value;
   }
 
@@ -34,7 +34,7 @@ export class StringValue {
       minLength?: number;
       additionalCheck?: (value: string) => Result<void>;
     } = {},
-  ): Result<StringValue> {
+  ): Result<NonEmptyString> {
     const trimmed = value.trim();
 
     if (trimmed.length === 0) {
@@ -54,6 +54,6 @@ export class StringValue {
       return err(result.error);
     }
 
-    return ok(new StringValue(trimmed));
+    return ok(new NonEmptyString(trimmed));
   }
 }

@@ -1,7 +1,7 @@
 import { Result } from "@/domain/abstractions/result.js";
-import { StringValue } from "@/domain/shared/value-objects/string-value.js";
+import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 
-export class Password extends StringValue {
+export class Password extends NonEmptyString {
   public static readonly minLength = 8;
   public static readonly maxLength = 60;
 

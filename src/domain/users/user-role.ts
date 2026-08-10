@@ -1,9 +1,9 @@
-import { StringValue } from "@/domain/shared/value-objects/string-value.js";
+import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { Result } from "@/domain/abstractions/result.js";
 import { err, ok } from "neverthrow";
 import { validation } from "@/domain/abstractions/errors.js";
 
-export class UserRole extends StringValue {
+export class UserRole extends NonEmptyString {
   public static readonly Admin = new UserRole("admin");
   public static readonly Regular = new UserRole("regular");
 

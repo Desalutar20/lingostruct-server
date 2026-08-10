@@ -1,11 +1,14 @@
 import { User } from "./user.js";
 import { UserId } from "./user-id.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
+import { ResultAsync } from "@/domain/abstractions/result.js";
+import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 
 export interface IUserRepository {
-  getAll: () => Promise<User[]>;
-  getById: (id: UserId) => Promise<User | null>;
-  getByEmail: (email: Email) => Promise<User | null>;
-  create: (user: User) => Promise<void>;
-  update: (user: User) => Promise<void>;
+  getAll: () => ResultAsync<User[]>;
+  getById: (id: UserId) => ResultAsync<User | null>;
+  getByEmail: (email: Email) => ResultAsync<User | null>;
+  deleteNotVerifiedUsers: () => ResultAsync<void>;
+  create: (user: User) => ResultAsync<void>;
+  update: (user: User) => ResultAsync<void>;
 }

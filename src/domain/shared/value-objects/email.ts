@@ -1,9 +1,9 @@
 import { err, ok } from "neverthrow";
-import { StringValue } from "./string-value.js";
+import { NonEmptyString } from "./non-empty-string.js";
 import { validation } from "@/domain/abstractions/errors.js";
 import { Result } from "@/domain/abstractions/result.js";
 
-export class Email extends StringValue {
+export class Email extends NonEmptyString {
   public static readonly maxLength = 150;
 
   constructor(value: string) {

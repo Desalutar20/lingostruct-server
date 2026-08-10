@@ -1,0 +1,9 @@
+Verify your account
+
+Thanks for creating an account.
+
+Please verify your email address by opening this link:
+
+{{verificationUrl}}
+
+If you didn't create this account, you can safely ignore this email.

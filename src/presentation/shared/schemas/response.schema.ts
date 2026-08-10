@@ -9,10 +9,12 @@ export const SuccessResponseSchema = <T extends ZodType>(schema: T) => {
 
 export const ErrorResponseSchema = z.object({
   status: z.literal("error"),
+  code: z.string(),
   error: z.string(),
 });
 
 export const ValidationErrorResponseSchema = z.object({
   status: z.literal("error"),
+  code: z.string(),
   errors: z.record(z.string(), z.string().array()),
 });

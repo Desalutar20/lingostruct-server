@@ -9,6 +9,7 @@ import {
   ValidationErrorResponseSchema,
 } from "@/presentation/shared/schemas/response.schema.js";
 import { transformToValueObject } from "@/presentation/shared/schemas/transform-value-object.js";
+import { mapAppErrorToHttpError } from "@/presentation/shared/utils/error-handler.js";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 
@@ -69,7 +70,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       const result = await fastify.useCases.auth.signUp.handle(command);
 
       if (result.isErr()) {
-        return reply.status(400).send({ status: "error", error: "err" });
+        return mapAppErrorToHttpError(reply, result.error);
       }
 
       reply.status(201).send({

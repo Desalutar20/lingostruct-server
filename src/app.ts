@@ -1,5 +1,5 @@
 import { Kysely } from "kysely";
-import { Config } from "@/application/config/index.js";
+import { ApplicationConfig, Config } from "@/application/config/index.js";
 import { Database } from "@/infrastructure/data/database.js";
 import { UnitOfWork } from "@/infrastructure/data/unit-of-work.js";
 import { UserRepository } from "@/infrastructure/data/users/user-repository.js";
@@ -18,6 +18,9 @@ import { TokenGenerator } from "@/infrastructure/security/token-generator.js";
 import { Redis } from "@/infrastructure/cache/redis.js";
 import { ICache } from "@/application/abstractions/cache/cache.interface.js";
 import { PinoLogger } from "@/infrastructure/logger/pino-logger.js";
+import { VerifyAccountCommandHandler } from "@/application/auth/use-cases/verify-account.js";
+import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+import { EmailTemplateRenderer } from "@/infrastructure/email/email-template-renderer.js";
 
 const setupRepositories = (db: Kysely<DB>) => {
   return {
@@ -27,28 +30,41 @@ const setupRepositories = (db: Kysely<DB>) => {
 };
 
 const setupServices = (
-  config: SmtpConfig,
+  applicationConfig: ApplicationConfig,
+  smtpConfig: SmtpConfig,
 ): {
   passwordHasher: IPasswordHasher;
   tokenGenerator: ITokenGenerator;
   emailSender: IEmailSender;
+  emailTemplateRenderer: EmailTemplateRenderer;
 } => {
   return {
     passwordHasher: new PasswordHasher(),
     tokenGenerator: new TokenGenerator(),
-    emailSender: new EmailSender(config),
+    emailSender: new EmailSender(smtpConfig),
+    emailTemplateRenderer: new EmailTemplateRenderer(applicationConfig),
   };
 };
 
-const setupUseCases = (
-  unitOfWork: IUnitOfWork,
-  passwordHasher: IPasswordHasher,
-  tokenGenerator: ITokenGenerator,
-  cache: ICache,
-): UseCases => {
+const setupUseCases = ({
+  unitOfWork,
+  userRepository,
+  passwordHasher,
+  tokenGenerator,
+  cache,
+  config,
+}: {
+  unitOfWork: IUnitOfWork;
+  userRepository: IUserRepository;
+  passwordHasher: IPasswordHasher;
+  tokenGenerator: ITokenGenerator;
+  cache: ICache;
+  config: ApplicationConfig;
+}): UseCases => {
   return {
     auth: {
-      signUp: new SignUpCommandHandler(unitOfWork, passwordHasher, tokenGenerator, cache),
+      signUp: new SignUpCommandHandler(unitOfWork, passwordHasher, tokenGenerator, cache, config),
+      verifyAccount: new VerifyAccountCommandHandler(userRepository, cache),
     },
   };
 };
@@ -61,11 +77,21 @@ export const createApp = async (config: Config) => {
 
   await redis.connect();
 
-  const { unitOfWork } = setupRepositories(db);
-  const { passwordHasher, tokenGenerator, emailSender } = setupServices(config.smtp);
-  const backgroundJobs = new BackgroundJobs(unitOfWork, emailSender, logger);
+  const { unitOfWork, userRepository } = setupRepositories(db);
+  const { passwordHasher, tokenGenerator, emailSender, emailTemplateRenderer } = setupServices(
+    config.application,
+    config.smtp,
+  );
+  const backgroundJobs = new BackgroundJobs(unitOfWork, emailSender, logger, emailTemplateRenderer);
 
-  const useCases = setupUseCases(unitOfWork, passwordHasher, tokenGenerator, redis);
+  const useCases = setupUseCases({
+    unitOfWork,
+    userRepository,
+    passwordHasher,
+    tokenGenerator,
+    cache: redis,
+    config: config.application,
+  });
 
   const server = await createServer(config, useCases, {
     logger: logger.logger,

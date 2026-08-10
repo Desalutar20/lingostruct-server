@@ -32,7 +32,7 @@ describe("Authentication", () => {
 
         const userFromDb = await app.getUserFromDbByEmail(validData.email);
 
-        expect(userFromDb).not.toBeUndefined();
+        expect(userFromDb).toBeDefined();
         expect(userFromDb!.isVerified).toBeFalsy();
         expect(userFromDb!.email).toBe(validData.email);
       });

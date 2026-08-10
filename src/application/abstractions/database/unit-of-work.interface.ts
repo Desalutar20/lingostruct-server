@@ -6,7 +6,7 @@ export interface IUnitOfWork {
   execute<T>(
     action: (
       repositories: { userRepository: IUserRepository; outboxRepository: IOutboxRepository },
-      actions: { commit: () => Promise<void>; rollback: () => Promise<void> },
-    ) => Promise<T>,
+      actions: { commit: () => ResultAsync<void>; rollback: () => ResultAsync<void> },
+    ) => ResultAsync<T>,
   ): ResultAsync<T>;
 }

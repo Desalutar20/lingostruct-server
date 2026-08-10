@@ -8,22 +8,24 @@ import { Nullable } from "@/shared/types/nullable.type.js";
 import { ProviderId } from "./provider-id.js";
 import { AggregateRoot } from "@/domain/abstractions/aggregate-root.js";
 import { UserCreatedDomainEvent } from "./events/user-created-domain-events.js";
+import { Result } from "@/domain/abstractions/result.js";
+import { err, ok } from "neverthrow";
+import { failure } from "@/domain/abstractions/errors.js";
 
 export class User extends AggregateRoot<UserId> {
-  private readonly _isBanned = false;
-  private readonly _isVerified = false;
-
   private constructor(
     id: UserId,
     createdAt: Date,
     updatedAt: Date,
-    private readonly _firstName: FirstName,
-    private readonly _lastName: LastName,
-    private readonly _email: Email,
-    private readonly _hashedPassword: Nullable<HashedPassword>,
-    private readonly _role: UserRole,
-    private readonly _googleId: Nullable<ProviderId>,
-    private readonly _githubId: Nullable<ProviderId>,
+    private _firstName: FirstName,
+    private _lastName: LastName,
+    private _email: Email,
+    private _hashedPassword: Nullable<HashedPassword>,
+    private _role: UserRole,
+    private _isBanned: boolean,
+    private _isVerified: boolean,
+    private _googleId: Nullable<ProviderId>,
+    private _githubId: Nullable<ProviderId>,
   ) {
     super(id, createdAt, updatedAt);
   }
@@ -61,6 +63,19 @@ export class User extends AggregateRoot<UserId> {
     return this._githubId;
   }
 
+  public verify(): Result<void> {
+    if (this.isBanned) {
+      return err(failure("User is banned", "OPERATION_FAILED"));
+    }
+
+    if (!this.isVerified) {
+      this._isVerified = true;
+      this._updatedAt = new Date();
+    }
+
+    return ok();
+  }
+
   public static create(
     firstName: FirstName,
     lastName: LastName,
@@ -80,6 +95,8 @@ export class User extends AggregateRoot<UserId> {
       email,
       hashedPassword,
       UserRole.Regular,
+      false,
+      false,
       googleId,
       githubId,
     );
@@ -98,6 +115,8 @@ export class User extends AggregateRoot<UserId> {
     email: Email,
     hashedPassword: Nullable<HashedPassword>,
     userRole: UserRole,
+    isBanned: boolean,
+    isVerified: boolean,
     googleId: Nullable<ProviderId>,
     githubId: Nullable<ProviderId>,
   ): User {
@@ -110,6 +129,8 @@ export class User extends AggregateRoot<UserId> {
       email,
       hashedPassword,
       userRole,
+      isBanned,
+      isVerified,
       googleId,
       githubId,
     );

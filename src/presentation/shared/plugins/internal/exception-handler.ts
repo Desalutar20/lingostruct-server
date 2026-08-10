@@ -9,6 +9,7 @@ export default fp(async (fastify) => {
     if (typeof err === "object" && err && "statusCode" in err && err.statusCode === 429) {
       return reply.status(429).send({
         status: "error",
+        code: "RATE_LIMIT_EXCEEDED",
         error: "You hit the rate limit! Slow down please!",
       });
     }
@@ -16,6 +17,7 @@ export default fp(async (fastify) => {
     if (hasZodFastifySchemaValidationErrors(err)) {
       return reply.code(400).send({
         status: "error",
+        code: "Validation",
         errors: (err.validation as { instancePath: string; message: string }[]).reduce(
           (acc: Record<string, string[]>, err) => {
             if (!acc[err.instancePath]) {
@@ -47,6 +49,7 @@ export default fp(async (fastify) => {
 
       return reply.code(500).send({
         status: "error",
+        Validation: "UNEXPECTED_ERROR",
         error: "Response doesn't match the schema",
       });
     }
@@ -64,6 +67,8 @@ export default fp(async (fastify) => {
       "Unhandled error occurred",
     );
 
-    reply.status(500).send({ status: "error", error: "Internal Server Error" });
+    reply
+      .status(500)
+      .send({ status: "error", code: "UNEXPECTED_ERROR", error: "Internal Server Error" });
   });
 });

@@ -9,42 +9,50 @@ import { LastName } from "@/domain/users/last-name.js";
 import { HashedPassword } from "@/domain/users/hashed-password.js";
 import { UserRole } from "@/domain/users/user-role.js";
 import { ProviderId } from "@/domain/users/provider-id.js";
-import { throwDatabaseError } from "../database-errors.js";
+import { mapDbErrorToAppError } from "../database-errors.js";
+import { ResultAsync } from "@/domain/abstractions/result.js";
+import { fromPromise } from "neverthrow";
+import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 
 export class UserRepository implements IUserRepository {
   constructor(private readonly db: Kysely<DB>) {}
 
-  async getAll(): Promise<User[]> {
-    const rows = await this.db.selectFrom("users").selectAll().execute();
-
-    return rows.map((row) => UserRepository.toEntity(row));
+  getAll(): ResultAsync<User[]> {
+    return fromPromise(this.db.selectFrom("users").selectAll().execute(), (err) =>
+      mapDbErrorToAppError(err, "UserRepository.getAll"),
+    ).map((rows) => rows.map((row) => UserRepository.toEntity(row)));
   }
 
-  async getById(id: UserId): Promise<User | null> {
-    const row = await this.db
-      .selectFrom("users")
-      .selectAll()
-      .where("id", "=", id.value)
-      .executeTakeFirst();
-
-    if (!row) return null;
-
-    return UserRepository.toEntity(row);
+  getById(id: UserId): ResultAsync<User | null> {
+    return fromPromise(
+      this.db.selectFrom("users").selectAll().where("id", "=", id.value).executeTakeFirst(),
+      (err) => mapDbErrorToAppError(err, "UserRepository.getById"),
+    ).map((row) => (!row ? null : UserRepository.toEntity(row)));
   }
-  async getByEmail(email: Email): Promise<User | null> {
-    const row = await this.db
-      .selectFrom("users")
-      .selectAll()
-      .where("email", "=", email.value)
-      .executeTakeFirst();
 
-    if (!row) return null;
-
-    return UserRepository.toEntity(row);
+  getByEmail(email: Email): ResultAsync<User | null> {
+    return fromPromise(
+      this.db.selectFrom("users").selectAll().where("email", "=", email.value).executeTakeFirst(),
+      (err) => mapDbErrorToAppError(err, "UserRepository.getByEmail"),
+    ).map((row) => (!row ? null : UserRepository.toEntity(row)));
   }
-  async create(user: User): Promise<void> {
-    try {
-      await this.db
+
+  deleteNotVerifiedUsers(): ResultAsync<void> {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() - 1);
+
+    return fromPromise(
+      this.db
+        .deleteFrom("users")
+        .where((eb) => eb.and([eb("isVerified", "=", false), eb("createdAt", "<", threshold)]))
+        .execute(),
+      (err) => mapDbErrorToAppError(err, "UserRepository.deleteNotVerifiedUsers"),
+    ).map(() => undefined);
+  }
+
+  create(user: User): ResultAsync<void> {
+    return fromPromise(
+      this.db
         .insertInto("users")
         .values({
           id: user.id.value,
@@ -60,17 +68,17 @@ export class UserRepository implements IUserRepository {
           googleId: user.googleId?.value,
           githubId: user.githubId?.value,
         })
-        .execute();
-    } catch (error) {
-      throwDatabaseError(error);
-    }
+        .execute(),
+      (err) => mapDbErrorToAppError(err, "UserRepository.create"),
+    ).map(() => undefined);
   }
-  async update(user: User): Promise<void> {
-    try {
-      await this.db
+
+  update(user: User): ResultAsync<void> {
+    return fromPromise(
+      this.db
         .updateTable("users")
         .set({
-          updatedAt: new Date(),
+          updatedAt: user.updatedAt,
           firstName: user.firstName.value,
           lastName: user.lastName.value,
           email: user.email.value,
@@ -82,10 +90,9 @@ export class UserRepository implements IUserRepository {
           githubId: user.githubId?.value,
         })
         .where("id", "=", user.id.value)
-        .execute();
-    } catch (error) {
-      throwDatabaseError(error);
-    }
+        .execute(),
+      (err) => mapDbErrorToAppError(err, "UserRepository.update"),
+    ).map(() => undefined);
   }
 
   private static toEntity(row: Selectable<Users>): User {
@@ -98,6 +105,8 @@ export class UserRepository implements IUserRepository {
       Email.create(row.email)._unsafeUnwrap(),
       row.hashedPassword ? HashedPassword.create(row.hashedPassword)._unsafeUnwrap() : null,
       UserRole.create(row.role)._unsafeUnwrap(),
+      row.isBanned,
+      row.isVerified,
       row.googleId ? ProviderId.create(row.googleId)._unsafeUnwrap() : null,
       row.githubId ? ProviderId.create(row.githubId)._unsafeUnwrap() : null,
     );

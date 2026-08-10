@@ -5,12 +5,14 @@ import { DB } from "@/infrastructure/data/db.types.js";
 import { Kysely } from "kysely";
 import { setupTestDatabase } from "./test-database.js";
 import { setupTestRedis } from "./test-redis.js";
+import { RedisClientType } from "redis";
 
 export class TestApp {
   constructor(
     public readonly config: Config,
     protected readonly url: string,
     protected readonly db: Kysely<DB>,
+    protected readonly cache: RedisClientType,
   ) {}
 
   public static async run(cb: (app: TestApp) => void | Promise<void>) {
@@ -22,7 +24,7 @@ export class TestApp {
     config.redis.keyPrefix = `${crypto.randomUUID()}:`;
 
     const { kysely, cleanDatabase } = await setupTestDatabase(config.database);
-    const { cleanRedis } = await setupTestRedis(config.redis);
+    const { redis, cleanRedis } = await setupTestRedis(config.redis);
 
     const app = await createApp(config);
 
@@ -35,7 +37,7 @@ export class TestApp {
     const port = typeof address === "string" ? address : address?.port;
 
     const url = `http://localhost:${port}/api/v1`;
-    const testApp = new TestApp(config, url, kysely);
+    const testApp = new TestApp(config, url, kysely, redis);
 
     try {
       await cb(testApp);

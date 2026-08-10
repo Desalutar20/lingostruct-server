@@ -8,10 +8,12 @@ import fastifyAutoload from "@fastify/autoload";
 import path from "node:path";
 import pino from "pino";
 import { RateLimitConfig } from "@/application/config/rate-limit.config.js";
+import { VerifyAccountCommand } from "@/application/auth/use-cases/verify-account.js";
 
 export type UseCases = {
   auth: {
     signUp: ICommandHandler<SignUpCommand>;
+    verifyAccount: ICommandHandler<VerifyAccountCommand>;
   };
 };
 
