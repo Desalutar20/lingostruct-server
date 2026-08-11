@@ -1,4 +1,4 @@
-import { SessionUser } from "@/application/auth/types/session-user.js";
+import { Session } from "@/application/abstractions/auth/session.type.js";
 import { SignInCommand } from "@/application/auth/use-cases/sign-in.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { Password } from "@/domain/users/password.js";
@@ -34,7 +34,7 @@ const SignInResponseSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   role: z.literal(["admin", "regular"]),
-}) satisfies z.ZodType<SessionUser>;
+}) satisfies z.ZodType<Session>;
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(

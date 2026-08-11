@@ -22,6 +22,9 @@ import { VerifyAccountCommandHandler } from "@/application/auth/use-cases/verify
 import { IUserRepository } from "@/domain/users/user-repository.interface.js";
 import { EmailTemplateRenderer } from "@/infrastructure/email/email-template-renderer.js";
 import { SignInCommandHandler } from "@/application/auth/use-cases/sign-in.js";
+import { ISessionStore } from "@/application/abstractions/auth/session-store.interface.js";
+import { RedisSessionStore } from "@/infrastructure/cache/redis-session-store.js";
+import { DeleteExpiredSessionsCommandHandler } from "@/application/auth/use-cases/delete-expired-sessions.js";
 
 const setupRepositories = (db: Kysely<DB>) => {
   return {
@@ -53,6 +56,7 @@ const setupUseCases = ({
   passwordHasher,
   tokenGenerator,
   cache,
+  sessionStore,
   config,
 }: {
   unitOfWork: IUnitOfWork;
@@ -60,6 +64,7 @@ const setupUseCases = ({
   passwordHasher: IPasswordHasher;
   tokenGenerator: ITokenGenerator;
   cache: ICache;
+  sessionStore: ISessionStore;
   config: ApplicationConfig;
 }): UseCases => {
   return {
@@ -72,7 +77,7 @@ const setupUseCases = ({
         cache,
         config,
       ),
-      signIn: new SignInCommandHandler(userRepository, passwordHasher, cache, config),
+      signIn: new SignInCommandHandler(userRepository, passwordHasher, sessionStore, config),
       verifyAccount: new VerifyAccountCommandHandler(userRepository, cache),
     },
   };
@@ -91,7 +96,7 @@ export const createApp = async (config: Config) => {
     config.application,
     config.smtp,
   );
-  const backgroundJobs = new BackgroundJobs(unitOfWork, emailSender, logger, emailTemplateRenderer);
+  const sessionStore = new RedisSessionStore(redis.pool, config.redis);
 
   const useCases = setupUseCases({
     unitOfWork,
@@ -99,8 +104,17 @@ export const createApp = async (config: Config) => {
     passwordHasher,
     tokenGenerator,
     cache: redis,
+    sessionStore,
     config: config.application,
   });
+
+  const backgroundJobs = new BackgroundJobs(
+    unitOfWork,
+    emailSender,
+    logger,
+    emailTemplateRenderer,
+    new DeleteExpiredSessionsCommandHandler(sessionStore),
+  );
 
   const server = await createServer(config, useCases, {
     logger: logger.logger,

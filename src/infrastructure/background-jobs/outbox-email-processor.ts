@@ -9,7 +9,7 @@ import { isNodemailerError } from "@/infrastructure/email/nodemailer-guard.js";
 import { OutboxType } from "@/application/abstractions/database/outbox/outbox-type.js";
 import { ILogger } from "@/application/abstractions/logger/logger.interface.js";
 import { OutboxEmailData } from "@/application/abstractions/database/outbox/outbox-data.type.js";
-import { errAsync, okAsync, ResultAsync as RsAsync } from "neverthrow";
+import { err, errAsync, fromPromise, okAsync, ResultAsync as RsAsync } from "neverthrow";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { internal } from "@/domain/abstractions/errors.js";
 import { EmailTemplateRenderer } from "@/infrastructure/email/email-template-renderer.js";
@@ -62,47 +62,61 @@ export class OutboxEmailProcessor extends CronProcessor {
     );
   }
 
-  private trySendWithRetry(outbox: Outbox<OutboxEmailData>): ResultAsync<void> {
-    let retry = 0;
+  trySendWithRetry(outbox: Outbox<OutboxEmailData>): ResultAsync<void> {
+    const emailResult = Email.create(outbox.data.email);
+    if (emailResult.isErr()) return errAsync(emailResult.error);
 
-    while (retry < OutboxEmailProcessor.MaxRetries) {
-      return Email.create(outbox.data.email)
-        .map((val) => this.getEmailMessage(val, outbox))
-        .asyncAndThen((message) =>
-          this.emailSender
-            .send(message)
-            .andThen(() => okAsync())
-            .orTee((error) => {
-              if (
-                error.type === "Internal" &&
-                isNodemailerError(error.error) &&
-                retry < OutboxEmailProcessor.MaxRetries
-              ) {
-                retry++;
+    const emailMessage = this.getEmailMessage(emailResult.value, outbox);
 
-                this.logger.warn(
-                  `[OutboxEmailProcessor] Email delivery failed, retrying. ` +
-                    `Attempt ${retry}/${OutboxEmailProcessor.MaxRetries}. ` +
-                    `Code: ${error.error.code}. ` +
-                    `Message: ${error.error.message}`,
-                );
+    return fromPromise(
+      (async () => {
+        let attempt = 1;
 
-                return;
-              }
+        while (attempt <= OutboxEmailProcessor.MaxRetries) {
+          const result = await this.emailSender.send(emailMessage);
+          if (result.isOk()) {
+            return result;
+          }
 
-              this.logger.error(
-                `[OutboxEmailProcessor] Email delivery failed after ` +
-                  `${OutboxEmailProcessor.MaxRetries} attempts. ` +
-                  `OutboxId: ${outbox.id.value}`,
-                error,
-              );
+          const error = result.error;
+          if (
+            error.type === "Internal" &&
+            isNodemailerError(error.error) &&
+            attempt < OutboxEmailProcessor.MaxRetries
+          ) {
+            attempt++;
 
-              return errAsync(error);
-            }),
+            this.logger.warn(
+              `[OutboxEmailProcessor] Email delivery failed, retrying. ` +
+                `Attempt ${attempt}/${OutboxEmailProcessor.MaxRetries}. ` +
+                `Message: ${error.error.message}`,
+            );
+
+            continue;
+          }
+
+          this.logger.error(
+            `[OutboxEmailProcessor] Email delivery failed after ` +
+              `${OutboxEmailProcessor.MaxRetries} attempts. ` +
+              `OutboxId: ${outbox.id.value}`,
+            error,
+          );
+
+          return result;
+        }
+
+        return err(
+          internal(
+            `Failed to complete email delivery retry attempts. ` + `OutboxId: ${outbox.id.value}`,
+          ),
         );
-    }
-
-    return errAsync(internal(""));
+      })(),
+      (error) =>
+        internal(
+          `Failed to execute email delivery retry loop. OutboxId: ${outbox.id.value}`,
+          error,
+        ),
+    ).andThen((result) => result);
   }
 
   private getEmailMessage(email: Email, data: Outbox<OutboxEmailData>): EmailMessage {
@@ -114,47 +128,4 @@ export class OutboxEmailProcessor extends CronProcessor {
         return x;
     }
   }
-
-  // private  trySendWithRetry(outbox: Outbox<OutboxEmailData>): ResultAsync<void> {
-  //   let retry = 0;
-
-  //   while (retry < OutboxEmailProcessor.MaxRetries) {
-  //     const result = await Email.create(outbox.data.email).asyncAndThen((email) =>
-  //       this.emailSender.send({
-  //         to: email,
-
-  //         subject: "outbox.data.subject,",
-  //         text: "outbox.data.subject,",
-  //         html: "outbox.data.subject,",
-  //       }),
-  //     );
-
-  //     if (result.isOk()) {
-  //       return okAsync()
-  //     }
-
-  //     if (result.error.type === "Internal" && isNodemailerError(result.error.error)) {
-  //       retry++;
-
-  //       this.logger.warn(
-  //         `[OutboxEmail] Email delivery failed, retrying. Attempt ${retry}/${OutboxEmailProcessor.MaxRetries}. Code: ${result.error.error.code}. Message: ${result.error.error.message}`,
-  //       );
-
-  //       continue;
-  //     }
-
-  //     this.logger.error(
-  //       `[OutboxEmail] Email delivery failed with a non-retryable error. OutboxId: ${outbox.id.value}`,
-  //       result.error,
-  //     );
-
-  //     return "failed";
-  //   }
-
-  //   this.logger.error(
-  //     `[OutboxEmail] Email delivery failed after ${OutboxEmailProcessor.MaxRetries} attempts. OutboxId: ${outbox.id.value}`,
-  //   );
-
-  //   return "failed";
-  // }
 }

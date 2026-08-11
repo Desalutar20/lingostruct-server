@@ -1,4 +1,4 @@
-export type SessionUser = {
+export type Session = {
   id: string;
   email: string;
   firstName: string;
