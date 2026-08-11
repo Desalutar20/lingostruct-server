@@ -10,6 +10,10 @@ export default defineConfig({
     typecheck: {
       ignoreSourceErrors: true,
     },
+    fakeTimers: {
+      shouldClearNativeTimers: false,
+      // doNotFake: ["nextTick", "performance", "queueMicrotask"],
+    },
     fileParallelism: true,
     globals: true,
     server: {
@@ -20,6 +24,7 @@ export default defineConfig({
     root: "./tests",
     isolate: false,
     testTimeout: 300000,
+
     hookTimeout: 100000,
     maxConcurrency: 15,
     maxWorkers: 5,

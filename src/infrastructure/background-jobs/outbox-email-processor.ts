@@ -13,7 +13,6 @@ import { err, errAsync, fromPromise, okAsync, ResultAsync as RsAsync } from "nev
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { internal } from "@/domain/abstractions/errors.js";
 import { EmailTemplateRenderer } from "@/infrastructure/email/email-template-renderer.js";
-import { EmailMessage } from "@/application/abstractions/email/email-message.type.js";
 
 export class OutboxEmailProcessor extends CronProcessor {
   constructor(
@@ -51,10 +50,6 @@ export class OutboxEmailProcessor extends CronProcessor {
         .orElse((error) => {
           if (error instanceof Error) {
             this.logger.error(error);
-          } else {
-            this.logger.error(
-              `[OutboxEmailProcessor] Failed to process outbox batch. Unknown error: ${String(error)}`,
-            );
           }
 
           return rollback();
@@ -66,7 +61,11 @@ export class OutboxEmailProcessor extends CronProcessor {
     const emailResult = Email.create(outbox.data.email);
     if (emailResult.isErr()) return errAsync(emailResult.error);
 
-    const emailMessage = this.getEmailMessage(emailResult.value, outbox);
+    const emailMessage = this.emailTemplateRenderer.render(
+      outbox.data.type,
+      emailResult.value,
+      outbox.data.token,
+    );
 
     return fromPromise(
       (async () => {
@@ -84,13 +83,12 @@ export class OutboxEmailProcessor extends CronProcessor {
             isNodemailerError(error.error) &&
             attempt < OutboxEmailProcessor.MaxRetries
           ) {
-            attempt++;
-
             this.logger.warn(
               `[OutboxEmailProcessor] Email delivery failed, retrying. ` +
                 `Attempt ${attempt}/${OutboxEmailProcessor.MaxRetries}. ` +
                 `Message: ${error.error.message}`,
             );
+            attempt++;
 
             continue;
           }
@@ -117,15 +115,5 @@ export class OutboxEmailProcessor extends CronProcessor {
           error,
         ),
     ).andThen((result) => result);
-  }
-
-  private getEmailMessage(email: Email, data: Outbox<OutboxEmailData>): EmailMessage {
-    switch (data.data.type) {
-      case "accountVerification":
-        return this.emailTemplateRenderer.renderAccountVerificationEmail(email, data.data.token);
-      default:
-        const x: never = data.data.type;
-        return x;
-    }
   }
 }

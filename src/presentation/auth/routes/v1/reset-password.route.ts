@@ -1,5 +1,3 @@
-import { Session } from "@/application/abstractions/auth/session.type.js";
-import { SignInCommand } from "@/application/auth/use-cases/sign-in.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { Password } from "@/domain/users/password.js";
 import {
@@ -11,15 +9,28 @@ import { transformToValueObject } from "@/presentation/shared/schemas/transform-
 import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-handler.js";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
+import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
+import { ResetPasswordCommand } from "@/application/auth/use-cases/reset-password.js";
 
-const SignInRequestSchema = z.object({
+const ResetPasswordRequestSchema = z.object({
   email: z
     .email()
     .trim()
     .nonempty()
     .max(Email.maxLength)
     .transform(transformToValueObject(Email.create)),
-  password: z
+
+  token: z
+    .string()
+    .trim()
+    .nonempty()
+    .max(200)
+    .transform(
+      transformToValueObject((val) =>
+        NonEmptyString.create(val, "token", "Token", { maxLength: 200 }),
+      ),
+    ),
+  newPassword: z
     .string()
     .trim()
     .nonempty()
@@ -28,49 +39,43 @@ const SignInRequestSchema = z.object({
     .transform(transformToValueObject(Password.create)),
 });
 
-const SignInResponseSchema = z.object({
-  id: z.string(),
-  email: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  role: z.literal(["admin", "regular"]),
-}) satisfies z.ZodType<Session>;
-
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
-    "/auth/sign-in",
+    "/auth/reset-password",
     {
       config: {
         rateLimit: {
-          max: fastify.rateLimitConfig.signIn,
+          max: fastify.rateLimitConfig.resetPassword,
           timeWindow: "1 minute",
         },
       },
       schema: {
         tags: ["Authentication"],
-        body: SignInRequestSchema,
+        body: ResetPasswordRequestSchema,
         response: {
-          200: SuccessResponseSchema(SignInResponseSchema),
+          200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
         },
       },
     },
     async (req, reply) => {
-      const command = new SignInCommand(req.body.email, req.body.password);
+      const command = new ResetPasswordCommand(
+        req.body.email,
+        req.body.token,
+        req.body.newPassword,
+      );
 
-      const result = await fastify.useCases.auth.signIn.handle(command);
+      const result = await fastify.useCases.auth.resetPassword.handle(command);
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);
       }
 
       reply
-        .cookie(fastify.applicationConfig.sessionCookieName, result.value[1].value, {
-          maxAge: fastify.applicationConfig.sessionTTLMinutes * 60,
-        })
+
         .status(200)
         .send({
           status: "success",
-          data: result.value[0],
+          data: "Password has been reset successfully.",
         });
     },
   );

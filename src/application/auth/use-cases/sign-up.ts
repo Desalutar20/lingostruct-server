@@ -9,7 +9,6 @@ import { Outbox } from "@/application/abstractions/database/outbox/outbox.js";
 import { OutboxType } from "@/application/abstractions/database/outbox/outbox-type.js";
 import { Password } from "@/domain/users/password.js";
 import { IPasswordHasher } from "@/application/abstractions/security/password-hasher.interface.js";
-import { HashedPassword } from "@/domain/users/hashed-password.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { ITokenGenerator } from "@/application/abstractions/security/token-generator.interface.js";
 import { ICache } from "@/application/abstractions/cache/cache.interface.js";
@@ -32,7 +31,7 @@ export class SignUpCommand implements ICommand {
 }
 
 export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
-  private readonly accountVerificationTTl: PositiveInt;
+  private readonly accountVerificationTTlSeconds: PositiveInt;
 
   constructor(
     private readonly unitOfWork: IUnitOfWork,
@@ -42,7 +41,7 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
     private readonly cache: ICache,
     applicationConfig: ApplicationConfig,
   ) {
-    this.accountVerificationTTl = PositiveInt.create(
+    this.accountVerificationTTlSeconds = PositiveInt.create(
       applicationConfig.accountVerificationTTLMinutes * 60,
     )._unsafeUnwrap();
   }
@@ -64,7 +63,6 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
           : errAsync(internal("Failed to delay sign-up response", err)),
       )
       .andThen(() => this.passwordHasher.hash(command.password))
-      .andThen((hashed) => HashedPassword.create(hashed.value))
       .andThen((hashedPassword) => {
         const user = User.create(
           command.firstName,
@@ -77,7 +75,11 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
 
         const token = this.tokenGenerator.generate();
         return this.cache
-          .set(authCacheKeys.verificationToken(token), user.id.value, this.accountVerificationTTl)
+          .set(
+            authCacheKeys.verificationToken(token),
+            user.id.value,
+            this.accountVerificationTTlSeconds,
+          )
           .andThen(() =>
             this.unitOfWork.execute(
               ({ userRepository, outboxRepository }, { commit, rollback }) => {

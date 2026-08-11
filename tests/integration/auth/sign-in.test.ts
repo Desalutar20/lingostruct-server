@@ -4,11 +4,11 @@ import { faker } from "@faker-js/faker";
 import { Password } from "@/domain/users/password.js";
 import "../helpers/requests/index.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
-import { SessionUser } from "@/application/auth/types/session-user.js";
+import { Session } from "@/application/abstractions/auth/session.type.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
 
 describe("Authentication", () => {
-  describe("Verify Account", () => {
+  describe("Sign In", () => {
     const validData = {
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
@@ -57,7 +57,7 @@ describe("Authentication", () => {
         );
         expect(response.status).toBe(200);
 
-        const data = (await response.json()) as { data: SessionUser };
+        const data = (await response.json()) as { data: Session };
 
         const parsedCookies = app.parseCookie(response.headers.get("Set-Cookie") ?? "");
         const sessionId = app.unsignCookie(parsedCookies[app.config.application.sessionCookieName]);
@@ -95,7 +95,7 @@ describe("Authentication", () => {
           );
           expect(response.status).toBe(200);
 
-          const data = (await response.json()) as { data: SessionUser };
+          const data = (await response.json()) as { data: Session };
 
           const parsedCookies = app.parseCookie(response.headers.get("Set-Cookie") ?? "");
           const sessionId = app.unsignCookie(

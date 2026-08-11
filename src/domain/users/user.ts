@@ -76,7 +76,12 @@ export class User extends AggregateRoot<UserId> {
     return ok();
   }
 
-  public isValid(): boolean {
+  public updatePassword(newPassword: HashedPassword) {
+    this._hashedPassword = newPassword;
+    this._updatedAt = new Date();
+  }
+
+  public get isValid(): boolean {
     return !this.isBanned && this.isVerified;
   }
 

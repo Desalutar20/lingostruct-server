@@ -1,23 +1,22 @@
 import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
 import { TestApp } from "../test-app.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { ExtractPrefix } from "@/shared/types.js";
 
 declare module "../test-app.js" {
   interface TestApp {
-    getVerificationTokenFromCache(): Promise<string | undefined>;
+    getTokenFromCache(type: TokenKey): Promise<string | undefined>;
     getSession(sessionId: string): Promise<string | undefined>;
   }
 }
 
-TestApp.prototype.getVerificationTokenFromCache = async function () {
-  const pattern: ExtractPrefix<
-    ReturnType<(typeof authCacheKeys)["verificationToken" | "session"]>,
-    ":"
-  > = `verification-token:`;
-  const key = (await this.cache.keys(this.config.redis.keyPrefix + pattern + "*")).at(-1);
+type TokenKey = Extract<keyof typeof authCacheKeys, "verificationToken" | "passwordResetToken">;
 
-  return key?.split(pattern)[1];
+TestApp.prototype.getTokenFromCache = async function (type: TokenKey) {
+  const prefix = type === "verificationToken" ? "verification-token:" : "password-reset:";
+
+  const key = (await this.cache.keys(this.config.redis.keyPrefix + prefix + "*")).at(-1);
+
+  return key?.split(prefix)[1];
 };
 
 TestApp.prototype.getSession = async function (sessionId: string) {

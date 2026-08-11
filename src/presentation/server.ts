@@ -12,12 +12,20 @@ import { VerifyAccountCommand } from "@/application/auth/use-cases/verify-accoun
 import { SignInCommand } from "@/application/auth/use-cases/sign-in.js";
 import { Session } from "@/application/abstractions/auth/session.type.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
+import { ForgotPasswordCommand } from "@/application/auth/use-cases/forgot-password.js";
+import { ResetPasswordCommand } from "@/application/auth/use-cases/reset-password.js";
+import { AuthenticateCommand } from "@/application/auth/use-cases/authenticate.js";
+import { LogoutCommand } from "@/application/auth/use-cases/logout.js";
 
 export type UseCases = {
   auth: {
     signUp: ICommandHandler<SignUpCommand>;
     signIn: ICommandHandler<SignInCommand, Readonly<[Session, UUID]>>;
     verifyAccount: ICommandHandler<VerifyAccountCommand>;
+    forgotPassword: ICommandHandler<ForgotPasswordCommand>;
+    resetPassword: ICommandHandler<ResetPasswordCommand>;
+    authenticate: ICommandHandler<AuthenticateCommand, Session>;
+    logout: ICommandHandler<LogoutCommand>;
   };
 };
 

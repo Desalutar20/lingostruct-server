@@ -1,0 +1,59 @@
+import { ISessionStore } from "@/application/abstractions/auth/session-store.interface.js";
+import { ICache } from "@/application/abstractions/cache/cache.interface.js";
+import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
+import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
+import { IPasswordHasher } from "@/application/abstractions/security/password-hasher.interface.js";
+import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
+import { invalidTokenError, userNotFoundError } from "@/application/auth/auth-errors.js";
+import { ResultAsync } from "@/domain/abstractions/result.js";
+import { Email } from "@/domain/shared/value-objects/email.js";
+import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
+import { Password } from "@/domain/users/password.js";
+import { UserId } from "@/domain/users/user-id.js";
+import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+
+export class ResetPasswordCommand implements ICommand {
+  constructor(
+    public readonly email: Email,
+    public readonly token: NonEmptyString,
+    public readonly newPassword: Password,
+  ) {}
+}
+
+export class ResetPasswordCommandHandler implements ICommandHandler<ResetPasswordCommand> {
+  constructor(
+    private readonly userRepository: IUserRepository,
+    private readonly cache: ICache,
+    private readonly passwordHasher: IPasswordHasher,
+    private readonly sessionStore: ISessionStore,
+  ) {}
+
+  handle(command: ResetPasswordCommand): ResultAsync<void> {
+    return this.cache
+      .getDel<string>(authCacheKeys.passwordResetToken(command.token.value))
+      .andThen((id) => {
+        if (id === null) return invalidTokenError;
+
+        return UserId.create(id);
+      })
+      .andThen((userId) =>
+        this.userRepository
+          .getById(userId)
+          .andThen((user) => {
+            if (!user) return userNotFoundError;
+            if (user.email.value !== command.email.value) return invalidTokenError;
+
+            return this.passwordHasher
+              .hash(command.newPassword)
+              .map((hashedPassword) => ({ hashedPassword, user }));
+          })
+          .andThen(({ hashedPassword, user }) => {
+            user.updatePassword(hashedPassword);
+
+            return this.sessionStore
+              .deleteAll(user.id)
+              .andThen(() => this.userRepository.update(user));
+          }),
+      );
+  }
+}

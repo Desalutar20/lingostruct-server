@@ -14,5 +14,6 @@ export interface ISessionStore {
   get(sessionId: UUID): ResultAsync<Session | null>;
   getSessionIds(userId: UserId): ResultAsync<UUID[]>;
   delete(userId: UserId, sessionId: UUID): ResultAsync<void>;
+  deleteAll(userId: UserId): ResultAsync<void>;
   deleteExpired(): ResultAsync<void>;
 }

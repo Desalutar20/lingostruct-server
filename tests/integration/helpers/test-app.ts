@@ -36,7 +36,7 @@ export class TestApp {
     const signUpResponse = await this.signUp(data, signal);
     expect(signUpResponse.status).toBe(201);
 
-    const token = await this.getVerificationTokenFromCache();
+    const token = await this.getTokenFromCache("verificationToken");
     expect(token).toBeDefined();
 
     const response = await this.verifyAccount({
@@ -46,10 +46,36 @@ export class TestApp {
     expect(response.status).toBe(200);
   }
 
+  public async signUpAndSignIn(
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      password: string;
+    },
+    signal?: AbortSignal,
+  ) {
+    await this.signUpAndVerify(data, signal);
+
+    const response = await this.signIn({ email: data.email, password: data.password }, signal);
+    expect(response.status).toBe(200);
+
+    const parsedCookies = this.parseCookie(response.headers.get("Set-Cookie") ?? "");
+    const sessionId = this.unsignCookie(parsedCookies[this.config.application.sessionCookieName]);
+
+    expect(sessionId).not.toBeNull();
+
+    return {
+      cookies: response.headers.get("Set-Cookie") ?? undefined,
+      sessionId: sessionId!,
+    };
+  }
+
   public static async run(cb: (app: TestApp) => void | Promise<void>) {
     const config = loadConfig();
 
     config.rateLimit.signUp = 15;
+    config.rateLimit.resetPassword = 15;
 
     config.database.database = `test-${crypto.randomUUID()}`;
     config.redis.keyPrefix = `${crypto.randomUUID()}:`;

@@ -19,7 +19,7 @@ describe("Authentication", () => {
         const signUpResponse = await app.signUp(validData, signal);
         expect(signUpResponse.status).toBe(201);
 
-        const token = await app.getVerificationTokenFromCache();
+        const token = await app.getTokenFromCache("verificationToken");
         expect(token).toBeDefined();
 
         const response = await app.verifyAccount({
@@ -35,7 +35,7 @@ describe("Authentication", () => {
         const signUpResponse = await app.signUp(validData, signal);
         expect(signUpResponse.status).toBe(201);
 
-        const token = await app.getVerificationTokenFromCache();
+        const token = await app.getTokenFromCache("verificationToken");
         expect(token).toBeDefined();
 
         const response = await app.verifyAccount({
@@ -129,7 +129,7 @@ describe("Authentication", () => {
           const signUpResponse = await app.signUp(validData, signal);
           expect(signUpResponse.status).toBe(201);
 
-          const token = await app.getVerificationTokenFromCache();
+          const token = await app.getTokenFromCache("verificationToken");
           expect(token).toBeDefined();
 
           if (index === 0) await app.deleteUserFromDbByEmail(validData.email);

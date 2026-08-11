@@ -8,41 +8,30 @@ import { transformToValueObject } from "@/presentation/shared/schemas/transform-
 import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-handler.js";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
-import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
-import { VerifyAccountCommand } from "@/application/auth/use-cases/verify-account.js";
+import { ForgotPasswordCommand } from "@/application/auth/use-cases/forgot-password.js";
 
-const VerifyAccountRequestSchema = z.object({
+const ForgotPasswordRequestSchema = z.object({
   email: z
     .email()
     .trim()
     .nonempty()
     .max(Email.maxLength)
     .transform(transformToValueObject(Email.create)),
-  token: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(200)
-    .transform(
-      transformToValueObject((val) =>
-        NonEmptyString.create(val, "token", "Token", { maxLength: 200 }),
-      ),
-    ),
 });
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
-    "/auth/verify-account",
+    "/auth/forgot-password",
     {
       config: {
         rateLimit: {
-          max: fastify.rateLimitConfig.verifyAccount,
+          max: fastify.rateLimitConfig.forgotPassword,
           timeWindow: "1 minute",
         },
       },
       schema: {
         tags: ["Authentication"],
-        body: VerifyAccountRequestSchema,
+        body: ForgotPasswordRequestSchema,
         response: {
           200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
@@ -50,16 +39,16 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       },
     },
     async (req, reply) => {
-      const command = new VerifyAccountCommand(req.body.email, req.body.token);
+      const command = new ForgotPasswordCommand(req.body.email);
 
-      const result = await fastify.useCases.auth.verifyAccount.handle(command);
+      const result = await fastify.useCases.auth.forgotPassword.handle(command);
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);
       }
 
       reply.status(200).send({
         status: "success",
-        data: "Account verified successfully",
+        data: "If an account with this email exists, you will receive a password reset link.",
       });
     },
   );

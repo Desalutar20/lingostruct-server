@@ -25,11 +25,18 @@ import { SignInCommandHandler } from "@/application/auth/use-cases/sign-in.js";
 import { ISessionStore } from "@/application/abstractions/auth/session-store.interface.js";
 import { RedisSessionStore } from "@/infrastructure/cache/redis-session-store.js";
 import { DeleteExpiredSessionsCommandHandler } from "@/application/auth/use-cases/delete-expired-sessions.js";
+import { IOutboxRepository } from "@/application/abstractions/database/outbox/outbox-repository.interface.js";
+import { ForgotPasswordCommandHandler } from "@/application/auth/use-cases/forgot-password.js";
+import { OutboxRepository } from "@/infrastructure/data/outbox/outbox-repository.js";
+import { ResetPasswordCommandHandler } from "@/application/auth/use-cases/reset-password.js";
+import { AuthenticateCommandHandler } from "@/application/auth/use-cases/authenticate.js";
+import { LogoutCommandHandler } from "@/application/auth/use-cases/logout.js";
 
 const setupRepositories = (db: Kysely<DB>) => {
   return {
     unitOfWork: new UnitOfWork(db),
     userRepository: new UserRepository(db),
+    outboxRepository: new OutboxRepository(db),
   };
 };
 
@@ -53,6 +60,7 @@ const setupServices = (
 const setupUseCases = ({
   unitOfWork,
   userRepository,
+  outboxRepository,
   passwordHasher,
   tokenGenerator,
   cache,
@@ -61,6 +69,7 @@ const setupUseCases = ({
 }: {
   unitOfWork: IUnitOfWork;
   userRepository: IUserRepository;
+  outboxRepository: IOutboxRepository;
   passwordHasher: IPasswordHasher;
   tokenGenerator: ITokenGenerator;
   cache: ICache;
@@ -79,6 +88,21 @@ const setupUseCases = ({
       ),
       signIn: new SignInCommandHandler(userRepository, passwordHasher, sessionStore, config),
       verifyAccount: new VerifyAccountCommandHandler(userRepository, cache),
+      forgotPassword: new ForgotPasswordCommandHandler(
+        userRepository,
+        outboxRepository,
+        cache,
+        tokenGenerator,
+        config,
+      ),
+      resetPassword: new ResetPasswordCommandHandler(
+        userRepository,
+        cache,
+        passwordHasher,
+        sessionStore,
+      ),
+      authenticate: new AuthenticateCommandHandler(sessionStore),
+      logout: new LogoutCommandHandler(sessionStore),
     },
   };
 };
@@ -91,7 +115,7 @@ export const createApp = async (config: Config) => {
 
   await redis.connect();
 
-  const { unitOfWork, userRepository } = setupRepositories(db);
+  const { unitOfWork, userRepository, outboxRepository } = setupRepositories(db);
   const { passwordHasher, tokenGenerator, emailSender, emailTemplateRenderer } = setupServices(
     config.application,
     config.smtp,
@@ -101,6 +125,7 @@ export const createApp = async (config: Config) => {
   const useCases = setupUseCases({
     unitOfWork,
     userRepository,
+    outboxRepository,
     passwordHasher,
     tokenGenerator,
     cache: redis,

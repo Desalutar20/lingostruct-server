@@ -12,7 +12,6 @@ import { ProviderId } from "@/domain/users/provider-id.js";
 import { mapDbErrorToAppError } from "../database-errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { fromPromise } from "neverthrow";
-import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 
 export class UserRepository implements IUserRepository {
   constructor(private readonly db: Kysely<DB>) {}

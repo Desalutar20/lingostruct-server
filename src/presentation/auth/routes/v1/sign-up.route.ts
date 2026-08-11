@@ -52,6 +52,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         },
       },
       schema: {
+        tags: ["Authentication"],
         body: SignUpRequestSchema,
         response: {
           201: SuccessResponseSchema(z.string()),

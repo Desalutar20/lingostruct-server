@@ -8,7 +8,7 @@ export class DeleteExpiredSessionsProcessor extends CronProcessor {
     private readonly logger: ILogger,
     private readonly useCase: ICommandHandler<DeleteExpiredSessionsCommand>,
   ) {
-    super("*/10 * * * * *");
+    super("0 * * * *");
   }
 
   protected async execute(): Promise<void> {

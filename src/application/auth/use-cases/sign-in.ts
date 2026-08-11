@@ -1,7 +1,7 @@
 import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
 import { IPasswordHasher } from "@/application/abstractions/security/password-hasher.interface.js";
-import { invalidCredentials } from "@/application/auth/auth-errors.js";
+import { invalidCredentialsError } from "@/application/auth/auth-errors.js";
 import { Session } from "@/application/abstractions/auth/session.type.js";
 import { ApplicationConfig } from "@/application/config/application.config.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
@@ -35,8 +35,8 @@ export class SignInCommandHandler implements ICommandHandler<
     return this.userRepository
       .getByEmail(command.email)
       .andThen((user) => {
-        if (user === null || user.hashedPassword === null || !user.isValid())
-          return invalidCredentials;
+        if (user === null || user.hashedPassword === null || !user.isValid)
+          return invalidCredentialsError;
 
         return this.passwordHasher.verify(command.password, user.hashedPassword).map((success) => ({
           success,
@@ -44,7 +44,7 @@ export class SignInCommandHandler implements ICommandHandler<
         }));
       })
       .andThen(({ success, user }) => {
-        if (!success) return invalidCredentials;
+        if (!success) return invalidCredentialsError;
 
         const sessionId = UUID.generate();
 

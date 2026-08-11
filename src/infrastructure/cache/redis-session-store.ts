@@ -7,9 +7,8 @@ import { ResultAsync } from "@/domain/abstractions/result.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
 import { UserId } from "@/domain/users/user-id.js";
-import { Redis } from "@/infrastructure/cache/redis.js";
 import { ExtractPrefix } from "@/shared/types.js";
-import { fromPromise, okAsync, Result as Rs } from "neverthrow";
+import { fromPromise, fromThrowable, ok, Result as Rs } from "neverthrow";
 import { RedisClientPoolType } from "redis";
 
 export class RedisSessionStore implements ISessionStore {
@@ -29,16 +28,14 @@ export class RedisSessionStore implements ISessionStore {
 
     const score = Date.now() + ttlSeconds.value * 1000;
 
-    return Redis.convertToRedisArgument(session).asyncAndThen((converted) =>
-      fromPromise(
-        (async () => {
-          await this.pool.zAdd(userSessionsKey, { value: sessionId.value, score });
-          await this.pool.set(sessionKey, converted, {
-            expiration: { type: "EX", value: ttlSeconds.value },
-          });
-        })(),
-        (err) => internal("Failed to save session to Redis", err),
-      ),
+    return fromPromise(
+      (async () => {
+        await this.pool.zAdd(userSessionsKey, { value: sessionId.value, score });
+        await this.pool.set(sessionKey, JSON.stringify(session), {
+          expiration: { type: "EX", value: ttlSeconds.value },
+        });
+      })(),
+      (err) => internal("Failed to save session to Redis", err),
     );
   }
 
@@ -46,9 +43,11 @@ export class RedisSessionStore implements ISessionStore {
     return fromPromise(this.pool.get(authCacheKeys.session(sessionId)), (err) =>
       internal("Failed to get session from Redis", err),
     ).andThen((session) => {
-      if (!session) return okAsync(null);
+      if (!session) return ok(null);
 
-      return Redis.convertFromRedisArgument<Session>(session);
+      return fromThrowable(JSON.parse, (err) =>
+        internal("Failed to parse session from redis", err),
+      )(session);
     });
   }
 
@@ -68,6 +67,23 @@ export class RedisSessionStore implements ISessionStore {
         await this.pool.del(sessionKey);
       })(),
       (err) => internal("Failed to delete Redis session", err),
+    );
+  }
+
+  deleteAll(userId: UserId): ResultAsync<void> {
+    return this.getSessionIds(userId).andThen((sessionIds) =>
+      fromPromise(
+        (async () => {
+          const userSessionsKey = authCacheKeys.userSessions(userId);
+
+          await Promise.all(
+            sessionIds.map((sessionId) => this.pool.del(authCacheKeys.session(sessionId))),
+          );
+
+          await this.pool.del(userSessionsKey);
+        })(),
+        (err) => internal("Failed to delete all Redis sessions", err),
+      ),
     );
   }
 
@@ -102,14 +118,13 @@ export class RedisSessionStore implements ISessionStore {
             const sessions = await this.pool.zRangeByScore(keyWithoutPrefix, -Infinity, now);
             if (sessions.length === 0) continue;
 
+            await Promise.all(
+              sessions.map((session) => this.pool.del(`${sessionKeyPrefix}:${session}`)),
+            );
             await this.pool.zRem(keyWithoutPrefix, sessions);
 
             if ((await this.pool.zCard(keyWithoutPrefix)) === 0) {
               await this.pool.del(keyWithoutPrefix);
-            }
-
-            for (const session of sessions) {
-              await this.pool.del(`${sessionKeyPrefix}:${session}`);
             }
           }
         } while (cursor !== "0");

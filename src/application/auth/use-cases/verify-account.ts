@@ -2,7 +2,7 @@ import { ICache } from "@/application/abstractions/cache/cache.interface.js";
 import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
 import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
-import { invalidToken, userNotFound } from "@/application/auth/auth-errors.js";
+import { invalidTokenError, userNotFoundError } from "@/application/auth/auth-errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
@@ -26,13 +26,13 @@ export class VerifyAccountCommandHandler implements ICommandHandler<VerifyAccoun
     return this.cache
       .getDel<string>(authCacheKeys.verificationToken(command.token.value))
       .andThen((value) => {
-        if (value === null) return invalidToken;
+        if (value === null) return invalidTokenError;
 
         var parsedId = UserId.create(value);
-        if (parsedId.isErr()) return invalidToken;
+        if (parsedId.isErr()) return invalidTokenError;
 
         return this.userRepository.getById(parsedId.value).andThen((user) => {
-          if (!user) return userNotFound;
+          if (!user) return userNotFoundError;
 
           return user.verify().asyncAndThen(() => this.userRepository.update(user));
         });
