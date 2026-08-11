@@ -5,13 +5,13 @@ import {
   ValidationErrorResponseSchema,
 } from "@/presentation/shared/schemas/response.schema.js";
 import { transformToValueObject } from "@/presentation/shared/schemas/transform-value-object.js";
-import { mapAppErrorToHttpError } from "@/presentation/shared/utils/error-handler.js";
+import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-handler.js";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { VerifyAccountCommand } from "@/application/auth/use-cases/verify-account.js";
 
-const VerifyAccountSchema = z.object({
+const VerifyAccountRequestSchema = z.object({
   email: z
     .email()
     .trim()
@@ -41,7 +41,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         },
       },
       schema: {
-        body: VerifyAccountSchema,
+        body: VerifyAccountRequestSchema,
         response: {
           200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
@@ -50,8 +50,8 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
     },
     async (req, reply) => {
       const command = new VerifyAccountCommand(req.body.email, req.body.token);
-      const result = await fastify.useCases.auth.verifyAccount.handle(command);
 
+      const result = await fastify.useCases.auth.verifyAccount.handle(command);
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);
       }

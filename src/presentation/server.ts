@@ -9,10 +9,14 @@ import path from "node:path";
 import pino from "pino";
 import { RateLimitConfig } from "@/application/config/rate-limit.config.js";
 import { VerifyAccountCommand } from "@/application/auth/use-cases/verify-account.js";
+import { SignInCommand } from "@/application/auth/use-cases/sign-in.js";
+import { SessionUser } from "@/application/auth/types/session-user.js";
+import { UUID } from "@/domain/shared/value-objects/uuid.js";
 
 export type UseCases = {
   auth: {
     signUp: ICommandHandler<SignUpCommand>;
+    signIn: ICommandHandler<SignInCommand, Readonly<[SessionUser, UUID]>>;
     verifyAccount: ICommandHandler<VerifyAccountCommand>;
   };
 };

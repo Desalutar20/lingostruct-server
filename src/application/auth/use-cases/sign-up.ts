@@ -13,11 +13,14 @@ import { HashedPassword } from "@/domain/users/hashed-password.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { ITokenGenerator } from "@/application/abstractions/security/token-generator.interface.js";
 import { ICache } from "@/application/abstractions/cache/cache.interface.js";
-import { err, ok } from "neverthrow";
+import { err, errAsync, fromPromise, ok, okAsync } from "neverthrow";
 import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
 import { OutboxEmailData } from "@/application/abstractions/database/outbox/outbox-data.type.js";
 import { ApplicationConfig } from "@/application/config/application.config.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
+import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+import { sleep } from "@/shared/helpers.js";
+import { failure, internal } from "@/domain/abstractions/errors.js";
 
 export class SignUpCommand implements ICommand {
   constructor(
@@ -33,6 +36,7 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
 
   constructor(
     private readonly unitOfWork: IUnitOfWork,
+    private readonly userRepository: IUserRepository,
     private readonly passwordHasher: IPasswordHasher,
     private readonly tokenGenerator: ITokenGenerator,
     private readonly cache: ICache,
@@ -44,8 +48,22 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
   }
 
   handle(command: SignUpCommand): ResultAsync<void> {
-    return this.passwordHasher
-      .hash(command.password)
+    return this.userRepository
+      .getByEmail(command.email)
+      .andThen((user) => {
+        if (user)
+          return fromPromise(sleep(1000), (err) => internal("", err)).andThen(() =>
+            err(failure("User already exists", "USER_ALREADY_EXISTS")),
+          );
+
+        return okAsync();
+      })
+      .orElse((err) =>
+        err.type === "Failure" && err.code === "USER_ALREADY_EXISTS"
+          ? okAsync()
+          : errAsync(internal("Failed to delay sign-up response", err)),
+      )
+      .andThen(() => this.passwordHasher.hash(command.password))
       .andThen((hashed) => HashedPassword.create(hashed.value))
       .andThen((hashedPassword) => {
         const user = User.create(
@@ -76,7 +94,7 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
                   .andThen(() => commit())
                   .orElse((error) =>
                     rollback().andThen(() =>
-                      error.type === "Failure" && error.code === "UserAlreadyExists"
+                      error.type === "Failure" && error.code === "USER_ALREADY_EXISTS"
                         ? ok()
                         : err(error),
                     ),

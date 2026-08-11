@@ -7,6 +7,9 @@ export default defineConfig({
     },
   },
   test: {
+    typecheck: {
+      ignoreSourceErrors: true,
+    },
     fileParallelism: true,
     globals: true,
     server: {

@@ -5,38 +5,42 @@ export type AppError =
   | { type: "AccessForbidden"; code: "ACCESS_DENIED" }
   | { type: "Internal"; code: "UNEXPECTED_ERROR"; message: string; error: unknown };
 
+export type ValidationError = Extract<AppError, { type: "Validation" }>;
+
 export const failure = (
   message: string,
   code: Extract<AppError, { type: "Failure" }>["code"],
-): AppError => ({
-  type: "Failure",
-  code,
-  message,
-});
+): AppError =>
+  ({
+    type: "Failure",
+    code,
+    message,
+  }) satisfies AppError;
 
-export const validation = (
-  field: string,
-  errors: string[],
-): Extract<AppError, { type: "Validation" }> => ({
-  type: "Validation",
-  code: "VALIDATION",
-  field,
-  errors,
-});
+export const validation = (field: string, errors: string[]) =>
+  ({
+    type: "Validation",
+    code: "VALIDATION",
+    field,
+    errors,
+  }) satisfies AppError;
 
-export const internal = (message: string, error?: unknown): AppError => ({
-  type: "Internal",
-  code: "UNEXPECTED_ERROR",
-  message,
-  error,
-});
+export const internal = (message: string, error?: unknown): AppError =>
+  ({
+    type: "Internal",
+    code: "UNEXPECTED_ERROR",
+    message,
+    error,
+  }) satisfies AppError;
 
-export const unauthorized = (): AppError => ({
-  type: "Unauthorized",
-  code: "INVALID_CREDENTIALS",
-});
+export const unauthorized = (): AppError =>
+  ({
+    type: "Unauthorized",
+    code: "INVALID_CREDENTIALS",
+  }) satisfies AppError;
 
-export const accessForbidden = (): AppError => ({
-  type: "AccessForbidden",
-  code: "ACCESS_DENIED",
-});
+export const accessForbidden = (): AppError =>
+  ({
+    type: "AccessForbidden",
+    code: "ACCESS_DENIED",
+  }) satisfies AppError;

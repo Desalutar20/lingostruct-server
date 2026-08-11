@@ -4,7 +4,7 @@ import { HashedPassword } from "./hashed-password.js";
 import { LastName } from "./last-name.js";
 import { UserId } from "./user-id.js";
 import { UserRole } from "./user-role.js";
-import { Nullable } from "@/shared/types/nullable.type.js";
+import { Nullable } from "@/shared/types.js";
 import { ProviderId } from "./provider-id.js";
 import { AggregateRoot } from "@/domain/abstractions/aggregate-root.js";
 import { UserCreatedDomainEvent } from "./events/user-created-domain-events.js";
@@ -74,6 +74,10 @@ export class User extends AggregateRoot<UserId> {
     }
 
     return ok();
+  }
+
+  public isValid(): boolean {
+    return !this.isBanned && this.isVerified;
   }
 
   public static create(

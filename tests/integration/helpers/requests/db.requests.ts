@@ -7,6 +7,7 @@ declare module "../test-app.js" {
     getUserFromDbByEmail(email: string): Promise<Selectable<Users> | undefined>;
     deleteUserFromDbByEmail(email: string): Promise<void>;
     banUserInDbByEmail(email: string): Promise<void>;
+    unVerifyUserInDbByEmail(email: string): Promise<void>;
   }
 }
 
@@ -26,6 +27,14 @@ TestApp.prototype.banUserInDbByEmail = async function (email: string) {
   await this.db
     .updateTable("users")
     .set("isBanned", true)
+    .where("email", "=", email)
+    .executeTakeFirst();
+};
+
+TestApp.prototype.unVerifyUserInDbByEmail = async function (email: string) {
+  await this.db
+    .updateTable("users")
+    .set("isVerified", false)
     .where("email", "=", email)
     .executeTakeFirst();
 };

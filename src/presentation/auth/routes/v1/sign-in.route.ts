@@ -1,7 +1,6 @@
-import { SignUpCommand } from "@/application/auth/use-cases/sign-up.js";
+import { SessionUser } from "@/application/auth/types/session-user.js";
+import { SignInCommand } from "@/application/auth/use-cases/sign-in.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
-import { FirstName } from "@/domain/users/first-name.js";
-import { LastName } from "@/domain/users/last-name.js";
 import { Password } from "@/domain/users/password.js";
 import {
   ErrorResponseSchema,
@@ -13,19 +12,7 @@ import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-hand
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 
-const SignUpRequestSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(FirstName.maxLength)
-    .transform(transformToValueObject(FirstName.create)),
-  lastName: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(LastName.maxLength)
-    .transform(transformToValueObject(LastName.create)),
+const SignInRequestSchema = z.object({
   email: z
     .email()
     .trim()
@@ -41,41 +28,50 @@ const SignUpRequestSchema = z.object({
     .transform(transformToValueObject(Password.create)),
 });
 
+const SignInResponseSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  role: z.literal(["admin", "regular"]),
+}) satisfies z.ZodType<SessionUser>;
+
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
-    "/auth/sign-up",
+    "/auth/sign-in",
     {
       config: {
         rateLimit: {
-          max: fastify.rateLimitConfig.signUp,
+          max: fastify.rateLimitConfig.signIn,
           timeWindow: "1 minute",
         },
       },
       schema: {
-        body: SignUpRequestSchema,
+        body: SignInRequestSchema,
+
         response: {
-          201: SuccessResponseSchema(z.string()),
+          200: SuccessResponseSchema(SignInResponseSchema),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
         },
       },
     },
     async (req, reply) => {
-      const command = new SignUpCommand(
-        req.body.firstName,
-        req.body.lastName,
-        req.body.email,
-        req.body.password,
-      );
+      const command = new SignInCommand(req.body.email, req.body.password);
 
-      const result = await fastify.useCases.auth.signUp.handle(command);
+      const result = await fastify.useCases.auth.signIn.handle(command);
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);
       }
 
-      reply.status(201).send({
-        status: "success",
-        data: "If this email is registered, we've sent a confirmation email to this address.",
-      });
+      reply
+        .cookie(fastify.applicationConfig.sessionCookieName, result.value[1].value, {
+          maxAge: fastify.applicationConfig.sessionTTLMinutes * 60,
+        })
+        .status(200)
+        .send({
+          status: "success",
+          data: result.value[0],
+        });
     },
   );
 };

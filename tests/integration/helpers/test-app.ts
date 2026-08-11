@@ -13,7 +13,38 @@ export class TestApp {
     protected readonly url: string,
     protected readonly db: Kysely<DB>,
     protected readonly cache: RedisClientType,
+    private readonly fastify: Awaited<ReturnType<typeof createApp>>,
   ) {}
+
+  public parseCookie(cookieHeader: string) {
+    return this.fastify.parseCookie(cookieHeader);
+  }
+
+  public unsignCookie(cookie: string) {
+    return this.fastify.unsignCookie(cookie).value;
+  }
+
+  public async signUpAndVerify(
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      password: string;
+    },
+    signal?: AbortSignal,
+  ) {
+    const signUpResponse = await this.signUp(data, signal);
+    expect(signUpResponse.status).toBe(201);
+
+    const token = await this.getVerificationTokenFromCache();
+    expect(token).toBeDefined();
+
+    const response = await this.verifyAccount({
+      email: data.email,
+      token,
+    });
+    expect(response.status).toBe(200);
+  }
 
   public static async run(cb: (app: TestApp) => void | Promise<void>) {
     const config = loadConfig();
@@ -37,7 +68,7 @@ export class TestApp {
     const port = typeof address === "string" ? address : address?.port;
 
     const url = `http://localhost:${port}/api/v1`;
-    const testApp = new TestApp(config, url, kysely, redis);
+    const testApp = new TestApp(config, url, kysely, redis, app);
 
     try {
       await cb(testApp);

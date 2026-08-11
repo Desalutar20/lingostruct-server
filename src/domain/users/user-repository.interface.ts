@@ -2,7 +2,6 @@ import { User } from "./user.js";
 import { UserId } from "./user-id.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
-import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 
 export interface IUserRepository {
   getAll: () => ResultAsync<User[]>;

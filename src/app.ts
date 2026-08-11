@@ -21,6 +21,7 @@ import { PinoLogger } from "@/infrastructure/logger/pino-logger.js";
 import { VerifyAccountCommandHandler } from "@/application/auth/use-cases/verify-account.js";
 import { IUserRepository } from "@/domain/users/user-repository.interface.js";
 import { EmailTemplateRenderer } from "@/infrastructure/email/email-template-renderer.js";
+import { SignInCommandHandler } from "@/application/auth/use-cases/sign-in.js";
 
 const setupRepositories = (db: Kysely<DB>) => {
   return {
@@ -63,7 +64,15 @@ const setupUseCases = ({
 }): UseCases => {
   return {
     auth: {
-      signUp: new SignUpCommandHandler(unitOfWork, passwordHasher, tokenGenerator, cache, config),
+      signUp: new SignUpCommandHandler(
+        unitOfWork,
+        userRepository,
+        passwordHasher,
+        tokenGenerator,
+        cache,
+        config,
+      ),
+      signIn: new SignInCommandHandler(userRepository, passwordHasher, cache, config),
       verifyAccount: new VerifyAccountCommandHandler(userRepository, cache),
     },
   };
