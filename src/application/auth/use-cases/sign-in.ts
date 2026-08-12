@@ -55,9 +55,9 @@ export class SignInCommandHandler implements ICommandHandler<
         const session: Session = {
           id: user.id.value,
           email: user.email.value,
-          firstName: user.firstName.value,
-          lastName: user.lastName.value,
-          role: user.role.value as "admin" | "regular",
+          firstName: user.firstName?.value,
+          lastName: user.lastName?.value,
+          role: user.role.value,
         };
 
         return this.sessionStore

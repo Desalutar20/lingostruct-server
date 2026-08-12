@@ -21,7 +21,7 @@ import { IUserRepository } from "@/domain/users/user-repository.interface.js";
 import { sleep } from "@/shared/helpers.js";
 import { failure, internal } from "@/domain/abstractions/errors.js";
 
-export class SignUpCommand implements ICommand {
+export class SignUpCommand implements ICommand<void> {
   constructor(
     public readonly firstName: FirstName,
     public readonly lastName: LastName,
@@ -30,7 +30,7 @@ export class SignUpCommand implements ICommand {
   ) {}
 }
 
-export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
+export class SignUpCommandHandler implements ICommandHandler<SignUpCommand, void> {
   private readonly accountVerificationTTlSeconds: PositiveInt;
 
   constructor(
@@ -69,8 +69,6 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand> {
           command.lastName,
           command.email,
           hashedPassword,
-          null,
-          null,
         );
 
         const token = this.tokenGenerator.generate();

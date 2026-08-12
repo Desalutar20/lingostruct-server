@@ -9,14 +9,14 @@ import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.j
 import { UserId } from "@/domain/users/user-id.js";
 import { IUserRepository } from "@/domain/users/user-repository.interface.js";
 
-export class VerifyAccountCommand implements ICommand {
+export class VerifyAccountCommand implements ICommand<void> {
   constructor(
     public readonly email: Email,
     public readonly token: NonEmptyString,
   ) {}
 }
 
-export class VerifyAccountCommandHandler implements ICommandHandler<VerifyAccountCommand> {
+export class VerifyAccountCommandHandler implements ICommandHandler<VerifyAccountCommand, void> {
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly cache: ICache,

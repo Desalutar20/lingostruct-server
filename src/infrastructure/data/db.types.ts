@@ -5,10 +5,9 @@
 
 import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Json = JsonValue;
 
@@ -36,14 +35,14 @@ export interface Outbox {
 export interface Users {
   createdAt: Generated<Timestamp>;
   email: string;
-  firstName: string;
+  firstName: string | null;
   githubId: string | null;
   googleId: string | null;
   hashedPassword: string | null;
   id: Generated<string>;
   isBanned: Generated<boolean>;
   isVerified: Generated<boolean>;
-  lastName: string;
+  lastName: string | null;
   role: Generated<string>;
   updatedAt: Generated<Timestamp>;
 }

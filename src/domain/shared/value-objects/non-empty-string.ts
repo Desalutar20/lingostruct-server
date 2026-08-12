@@ -35,8 +35,7 @@ export class NonEmptyString {
       additionalCheck?: (value: string) => Result<void>;
     } = {},
   ): Result<NonEmptyString> {
-    const trimmed = value.trim();
-
+    const trimmed = value?.trim();
     if (trimmed.length === 0) {
       return err(validation(field, [`${label} can't be empty`]));
     }

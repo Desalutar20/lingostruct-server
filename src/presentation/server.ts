@@ -16,16 +16,21 @@ import { ForgotPasswordCommand } from "@/application/auth/use-cases/forgot-passw
 import { ResetPasswordCommand } from "@/application/auth/use-cases/reset-password.js";
 import { AuthenticateCommand } from "@/application/auth/use-cases/authenticate.js";
 import { LogoutCommand } from "@/application/auth/use-cases/logout.js";
+import { GenerateOAuthUrlCommand } from "@/application/auth/use-cases/generate-oauth-url.js";
+import { OAuthState } from "@/application/abstractions/auth/oauth-user.type.js";
+import { OAuthSignInCommand } from "@/application/auth/use-cases/oauth-sign-in.js";
 
 export type UseCases = {
   auth: {
-    signUp: ICommandHandler<SignUpCommand>;
+    signUp: ICommandHandler<SignUpCommand, void>;
     signIn: ICommandHandler<SignInCommand, Readonly<[Session, UUID]>>;
-    verifyAccount: ICommandHandler<VerifyAccountCommand>;
-    forgotPassword: ICommandHandler<ForgotPasswordCommand>;
-    resetPassword: ICommandHandler<ResetPasswordCommand>;
+    verifyAccount: ICommandHandler<VerifyAccountCommand, void>;
+    forgotPassword: ICommandHandler<ForgotPasswordCommand, void>;
+    resetPassword: ICommandHandler<ResetPasswordCommand, void>;
     authenticate: ICommandHandler<AuthenticateCommand, Session>;
-    logout: ICommandHandler<LogoutCommand>;
+    logout: ICommandHandler<LogoutCommand, void>;
+    generateOAuthUrl: ICommandHandler<GenerateOAuthUrlCommand, [URL, OAuthState]>;
+    oauthSignIn: ICommandHandler<OAuthSignInCommand, UUID>;
   };
 };
 

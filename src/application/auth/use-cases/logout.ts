@@ -5,14 +5,14 @@ import { ResultAsync } from "@/domain/abstractions/result.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
 import { UserId } from "@/domain/users/user-id.js";
 
-export class LogoutCommand implements ICommand {
+export class LogoutCommand implements ICommand<void> {
   constructor(
     public readonly userId: UserId,
     public readonly sessionId: UUID,
   ) {}
 }
 
-export class LogoutCommandHandler implements ICommandHandler<LogoutCommand> {
+export class LogoutCommandHandler implements ICommandHandler<LogoutCommand, void> {
   constructor(private readonly sessionStore: ISessionStore) {}
 
   handle(command: LogoutCommand): ResultAsync<void> {

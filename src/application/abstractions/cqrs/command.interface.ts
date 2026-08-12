@@ -1,1 +1,1 @@
-export interface ICommand<TResponse = void> {}
+export interface ICommand<TResponse> {}

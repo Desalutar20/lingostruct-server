@@ -9,11 +9,11 @@ import { UUID } from "@/domain/shared/value-objects/uuid.js";
 import { UserId } from "@/domain/users/user-id.js";
 import { ExtractPrefix } from "@/shared/types.js";
 import { fromPromise, fromThrowable, ok, Result as Rs } from "neverthrow";
-import { RedisClientPoolType } from "redis";
+import { RedisClientType } from "redis";
 
 export class RedisSessionStore implements ISessionStore {
   constructor(
-    private readonly pool: RedisClientPoolType,
+    private readonly client: RedisClientType,
     private readonly config: RedisConfig,
   ) {}
 
@@ -30,8 +30,8 @@ export class RedisSessionStore implements ISessionStore {
 
     return fromPromise(
       (async () => {
-        await this.pool.zAdd(userSessionsKey, { value: sessionId.value, score });
-        await this.pool.set(sessionKey, JSON.stringify(session), {
+        await this.client.zAdd(userSessionsKey, { value: sessionId.value, score });
+        await this.client.set(sessionKey, JSON.stringify(session), {
           expiration: { type: "EX", value: ttlSeconds.value },
         });
       })(),
@@ -40,7 +40,7 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   get(sessionId: UUID): ResultAsync<Session | null> {
-    return fromPromise(this.pool.get(authCacheKeys.session(sessionId)), (err) =>
+    return fromPromise(this.client.get(authCacheKeys.session(sessionId)), (err) =>
       internal("Failed to get session from Redis", err),
     ).andThen((session) => {
       if (!session) return ok(null);
@@ -52,7 +52,7 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   getSessionIds(userId: UserId): ResultAsync<UUID[]> {
-    return fromPromise(this.pool.zRange(authCacheKeys.userSessions(userId), 0, -1), (err) =>
+    return fromPromise(this.client.zRange(authCacheKeys.userSessions(userId), 0, -1), (err) =>
       internal("Failed to get Redis session IDs from Redis", err),
     ).andThen((values) => Rs.combine(values.map(UUID.create)));
   }
@@ -63,8 +63,8 @@ export class RedisSessionStore implements ISessionStore {
 
     return fromPromise(
       (async () => {
-        await this.pool.zRem(userSessionsKey, sessionId.value);
-        await this.pool.del(sessionKey);
+        await this.client.zRem(userSessionsKey, sessionId.value);
+        await this.client.del(sessionKey);
       })(),
       (err) => internal("Failed to delete Redis session", err),
     );
@@ -77,10 +77,10 @@ export class RedisSessionStore implements ISessionStore {
           const userSessionsKey = authCacheKeys.userSessions(userId);
 
           await Promise.all(
-            sessionIds.map((sessionId) => this.pool.del(authCacheKeys.session(sessionId))),
+            sessionIds.map((sessionId) => this.client.del(authCacheKeys.session(sessionId))),
           );
 
-          await this.pool.del(userSessionsKey);
+          await this.client.del(userSessionsKey);
         })(),
         (err) => internal("Failed to delete all Redis sessions", err),
       ),
@@ -104,7 +104,7 @@ export class RedisSessionStore implements ISessionStore {
         let cursor = "0";
 
         do {
-          const result = await this.pool.scan(cursor, {
+          const result = await this.client.scan(cursor, {
             MATCH: pattern,
             COUNT: 100,
           });
@@ -115,16 +115,16 @@ export class RedisSessionStore implements ISessionStore {
             const keyWithoutPrefix = key.slice(this.config.keyPrefix.length);
             const now = Date.now();
 
-            const sessions = await this.pool.zRangeByScore(keyWithoutPrefix, -Infinity, now);
+            const sessions = await this.client.zRangeByScore(keyWithoutPrefix, -Infinity, now);
             if (sessions.length === 0) continue;
 
             await Promise.all(
-              sessions.map((session) => this.pool.del(`${sessionKeyPrefix}:${session}`)),
+              sessions.map((session) => this.client.del(`${sessionKeyPrefix}:${session}`)),
             );
-            await this.pool.zRem(keyWithoutPrefix, sessions);
+            await this.client.zRem(keyWithoutPrefix, sessions);
 
-            if ((await this.pool.zCard(keyWithoutPrefix)) === 0) {
-              await this.pool.del(keyWithoutPrefix);
+            if ((await this.client.zCard(keyWithoutPrefix)) === 0) {
+              await this.client.del(keyWithoutPrefix);
             }
           }
         } while (cursor !== "0");

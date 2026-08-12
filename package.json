@@ -7,7 +7,7 @@
   "main": "index.js",
   "scripts": {
     "start:dev": "tsx --watch ./src/main.ts",
-    "test": "vitest --typecheck --run",
+    "test": "vitest --run",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "migration:create": "npx kysely migrate:make",

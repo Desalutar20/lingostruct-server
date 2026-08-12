@@ -11,14 +11,15 @@ import { UserCreatedDomainEvent } from "./events/user-created-domain-events.js";
 import { Result } from "@/domain/abstractions/result.js";
 import { err, ok } from "neverthrow";
 import { failure } from "@/domain/abstractions/errors.js";
+import { OAuthProvider } from "@/domain/users/oauth-provider.js";
 
 export class User extends AggregateRoot<UserId> {
   private constructor(
     id: UserId,
     createdAt: Date,
     updatedAt: Date,
-    private _firstName: FirstName,
-    private _lastName: LastName,
+    private _firstName: Nullable<FirstName>,
+    private _lastName: Nullable<LastName>,
     private _email: Email,
     private _hashedPassword: Nullable<HashedPassword>,
     private _role: UserRole,
@@ -81,17 +82,37 @@ export class User extends AggregateRoot<UserId> {
     this._updatedAt = new Date();
   }
 
+  public linkProvider(provider: OAuthProvider, providerId: ProviderId): boolean {
+    switch (provider.value) {
+      case "google":
+        if (this._googleId) return false;
+
+        this._googleId = providerId;
+        this._updatedAt = new Date();
+
+        return true;
+      case "github":
+        if (this._githubId) return false;
+
+        this._githubId = providerId;
+        this._updatedAt = new Date();
+
+        return true;
+      default:
+        const x: never = provider.value;
+        return x;
+    }
+  }
+
   public get isValid(): boolean {
     return !this.isBanned && this.isVerified;
   }
 
   public static create(
-    firstName: FirstName,
-    lastName: LastName,
+    firstName: Nullable<FirstName>,
+    lastName: Nullable<LastName>,
     email: Email,
     hashedPassword: Nullable<HashedPassword>,
-    googleId: Nullable<ProviderId>,
-    githubId: Nullable<ProviderId>,
   ): User {
     const now = new Date();
 
@@ -106,8 +127,8 @@ export class User extends AggregateRoot<UserId> {
       UserRole.Regular,
       false,
       false,
-      googleId,
-      githubId,
+      null,
+      null,
     );
 
     user.addDomainEvent(new UserCreatedDomainEvent(user.email));
@@ -119,8 +140,8 @@ export class User extends AggregateRoot<UserId> {
     id: UserId,
     createdAt: Date,
     updatedAt: Date,
-    firstName: FirstName,
-    lastName: LastName,
+    firstName: Nullable<FirstName>,
+    lastName: Nullable<LastName>,
     email: Email,
     hashedPassword: Nullable<HashedPassword>,
     userRole: UserRole,

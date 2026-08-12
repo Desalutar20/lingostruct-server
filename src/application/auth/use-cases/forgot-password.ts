@@ -14,11 +14,11 @@ import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { IUserRepository } from "@/domain/users/user-repository.interface.js";
 import { okAsync } from "neverthrow";
 
-export class ForgotPasswordCommand implements ICommand {
+export class ForgotPasswordCommand implements ICommand<void> {
   constructor(public readonly email: Email) {}
 }
 
-export class ForgotPasswordCommandHandler implements ICommandHandler<ForgotPasswordCommand> {
+export class ForgotPasswordCommandHandler implements ICommandHandler<ForgotPasswordCommand, void> {
   private readonly resetPasswordTTLSeconds: PositiveInt;
 
   constructor(

@@ -12,7 +12,7 @@ import { Password } from "@/domain/users/password.js";
 import { UserId } from "@/domain/users/user-id.js";
 import { IUserRepository } from "@/domain/users/user-repository.interface.js";
 
-export class ResetPasswordCommand implements ICommand {
+export class ResetPasswordCommand implements ICommand<void> {
   constructor(
     public readonly email: Email,
     public readonly token: NonEmptyString,
@@ -20,7 +20,7 @@ export class ResetPasswordCommand implements ICommand {
   ) {}
 }
 
-export class ResetPasswordCommandHandler implements ICommandHandler<ResetPasswordCommand> {
+export class ResetPasswordCommandHandler implements ICommandHandler<ResetPasswordCommand, void> {
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly cache: ICache,
@@ -41,7 +41,7 @@ export class ResetPasswordCommandHandler implements ICommandHandler<ResetPasswor
           .getById(userId)
           .andThen((user) => {
             if (!user) return userNotFoundError;
-            if (user.email.value !== command.email.value) return invalidTokenError;
+            if (!user.email.equals(command.email)) return invalidTokenError;
 
             return this.passwordHasher
               .hash(command.newPassword)

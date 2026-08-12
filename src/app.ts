@@ -31,6 +31,11 @@ import { OutboxRepository } from "@/infrastructure/data/outbox/outbox-repository
 import { ResetPasswordCommandHandler } from "@/application/auth/use-cases/reset-password.js";
 import { AuthenticateCommandHandler } from "@/application/auth/use-cases/authenticate.js";
 import { LogoutCommandHandler } from "@/application/auth/use-cases/logout.js";
+import { IOAuthClientFactory } from "@/application/abstractions/auth/oauth-client-factory.interface.js";
+import { OAuthClientFactory } from "@/infrastructure/auth/oauth-client-factory.js";
+import { OAuthConfig } from "@/application/config/oauth.config.js";
+import { GenerateOAuthUrlCommandHandler } from "@/application/auth/use-cases/generate-oauth-url.js";
+import { OAuthSignInCommandHandler } from "@/application/auth/use-cases/oauth-sign-in.js";
 
 const setupRepositories = (db: Kysely<DB>) => {
   return {
@@ -43,17 +48,20 @@ const setupRepositories = (db: Kysely<DB>) => {
 const setupServices = (
   applicationConfig: ApplicationConfig,
   smtpConfig: SmtpConfig,
+  oauthConfig: OAuthConfig,
 ): {
   passwordHasher: IPasswordHasher;
   tokenGenerator: ITokenGenerator;
   emailSender: IEmailSender;
   emailTemplateRenderer: EmailTemplateRenderer;
+  oauthClientFactory: IOAuthClientFactory;
 } => {
   return {
     passwordHasher: new PasswordHasher(),
     tokenGenerator: new TokenGenerator(),
     emailSender: new EmailSender(smtpConfig),
     emailTemplateRenderer: new EmailTemplateRenderer(applicationConfig),
+    oauthClientFactory: new OAuthClientFactory(oauthConfig),
   };
 };
 
@@ -66,6 +74,7 @@ const setupUseCases = ({
   cache,
   sessionStore,
   config,
+  oauthClientFactory,
 }: {
   unitOfWork: IUnitOfWork;
   userRepository: IUserRepository;
@@ -75,6 +84,7 @@ const setupUseCases = ({
   cache: ICache;
   sessionStore: ISessionStore;
   config: ApplicationConfig;
+  oauthClientFactory: IOAuthClientFactory;
 }): UseCases => {
   return {
     auth: {
@@ -103,6 +113,13 @@ const setupUseCases = ({
       ),
       authenticate: new AuthenticateCommandHandler(sessionStore),
       logout: new LogoutCommandHandler(sessionStore),
+      generateOAuthUrl: new GenerateOAuthUrlCommandHandler(oauthClientFactory),
+      oauthSignIn: new OAuthSignInCommandHandler(
+        userRepository,
+        oauthClientFactory,
+        sessionStore,
+        config,
+      ),
     },
   };
 };
@@ -116,11 +133,9 @@ export const createApp = async (config: Config) => {
   await redis.connect();
 
   const { unitOfWork, userRepository, outboxRepository } = setupRepositories(db);
-  const { passwordHasher, tokenGenerator, emailSender, emailTemplateRenderer } = setupServices(
-    config.application,
-    config.smtp,
-  );
-  const sessionStore = new RedisSessionStore(redis.pool, config.redis);
+  const { passwordHasher, tokenGenerator, emailSender, emailTemplateRenderer, oauthClientFactory } =
+    setupServices(config.application, config.smtp, config.oauth);
+  const sessionStore = new RedisSessionStore(redis.client, config.redis);
 
   const useCases = setupUseCases({
     unitOfWork,
@@ -131,6 +146,7 @@ export const createApp = async (config: Config) => {
     cache: redis,
     sessionStore,
     config: config.application,
+    oauthClientFactory,
   });
 
   const backgroundJobs = new BackgroundJobs(
