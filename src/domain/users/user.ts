@@ -4,14 +4,16 @@ import { HashedPassword } from "./hashed-password.js";
 import { LastName } from "./last-name.js";
 import { UserId } from "./user-id.js";
 import { UserRole } from "./user-role.js";
-import { Nullable } from "@/shared/types.js";
+import { Nullable } from "@/app/types.js";
 import { ProviderId } from "./provider-id.js";
 import { AggregateRoot } from "@/domain/abstractions/aggregate-root.js";
-import { UserCreatedDomainEvent } from "./events/user-created-domain-events.js";
+import { UserCreatedDomainEvent } from "./events/user-created-domain-event.js";
 import { Result } from "@/domain/abstractions/result.js";
 import { err, ok } from "neverthrow";
 import { failure } from "@/domain/abstractions/errors.js";
 import { OAuthProvider } from "@/domain/users/oauth-provider.js";
+import { URL } from "@/domain/shared/value-objects/url.js";
+import { UserUpdatedDomainEvent } from "@/domain/users/events/user-updated-domain-event.js";
 
 export class User extends AggregateRoot<UserId> {
   private constructor(
@@ -27,6 +29,7 @@ export class User extends AggregateRoot<UserId> {
     private _isVerified: boolean,
     private _googleId: Nullable<ProviderId>,
     private _githubId: Nullable<ProviderId>,
+    private _avatarUrl: Nullable<URL>,
   ) {
     super(id, createdAt, updatedAt);
   }
@@ -62,6 +65,10 @@ export class User extends AggregateRoot<UserId> {
 
   public get githubId() {
     return this._githubId;
+  }
+
+  public get avatarUrl() {
+    return this._avatarUrl;
   }
 
   public verify(): Result<void> {
@@ -104,6 +111,31 @@ export class User extends AggregateRoot<UserId> {
     }
   }
 
+  public update(
+    firstName: Nullable<FirstName>,
+    lastName: Nullable<LastName>,
+    avatarUrl: Nullable<URL>,
+  ): boolean {
+    let isUpdated = false;
+
+    if (firstName !== null && (this.firstName === null || !firstName.equals(this.firstName))) {
+      this._firstName = firstName;
+      isUpdated = true;
+    }
+
+    if (avatarUrl !== null && (this.avatarUrl === null || !avatarUrl.equals(this.avatarUrl))) {
+      this._avatarUrl = avatarUrl;
+      isUpdated = true;
+    }
+
+    if (isUpdated) {
+      this._updatedAt = new Date();
+      this.addDomainEvent(new UserUpdatedDomainEvent(this));
+    }
+
+    return isUpdated;
+  }
+
   public get isValid(): boolean {
     return !this.isBanned && this.isVerified;
   }
@@ -129,6 +161,7 @@ export class User extends AggregateRoot<UserId> {
       false,
       null,
       null,
+      null,
     );
 
     user.addDomainEvent(new UserCreatedDomainEvent(user.email));
@@ -149,6 +182,7 @@ export class User extends AggregateRoot<UserId> {
     isVerified: boolean,
     googleId: Nullable<ProviderId>,
     githubId: Nullable<ProviderId>,
+    avatarUrl: Nullable<URL>,
   ): User {
     return new User(
       id,
@@ -163,6 +197,7 @@ export class User extends AggregateRoot<UserId> {
       isVerified,
       googleId,
       githubId,
+      avatarUrl,
     );
   }
 }

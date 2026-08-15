@@ -37,6 +37,7 @@ describe("Authentication", () => {
             firstName: expect.any(String),
             lastName: expect.any(String),
             role: expect.any(String),
+            avatarUrl: null,
           },
         });
         expect(parsedCookies).toHaveProperty(app.config.application.sessionCookieName);

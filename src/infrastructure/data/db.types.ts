@@ -33,6 +33,7 @@ export interface Outbox {
 }
 
 export interface Users {
+  avatarUrl: string | null;
   createdAt: Generated<Timestamp>;
   email: string;
   firstName: string | null;

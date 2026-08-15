@@ -9,6 +9,7 @@ export const autoConfig = (fastify: FastifyInstance): FastifyCookieOptions => ({
     httpOnly: true,
     signed: true,
     secure: fastify.applicationConfig.cookieSecure,
+    sameSite: "strict",
   },
 });
 

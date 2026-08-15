@@ -13,14 +13,20 @@ import { OAuthSignInCommand } from "@/application/auth/use-cases/oauth-sign-in.j
 import { OAuthProvider } from "@/domain/users/oauth-provider.js";
 import { failure } from "@/domain/abstractions/errors.js";
 
-const OAuthSignInRequestQuerySchema = z.object({
-  code: z.string().trim().transform(transformToValueObject(NonEmptyString.create)),
-  state: z.string().trim().transform(transformToValueObject(OAuthState.create)),
-});
+const OAuthSignInRequestQuerySchema = z
+  .object({
+    code: z.string().trim().transform(transformToValueObject(NonEmptyString.create)),
+    state: z.string().trim().transform(transformToValueObject(OAuthState.create)),
+  })
+  .strict();
 
-export const OAuthRequestParamsSchema = z.object({
-  provider: z.literal(["google", "github"]).transform(transformToValueObject(OAuthProvider.create)),
-});
+export const OAuthRequestParamsSchema = z
+  .object({
+    provider: z
+      .literal(["google", "github"])
+      .transform(transformToValueObject(OAuthProvider.create)),
+  })
+  .strict();
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.get(
@@ -37,7 +43,6 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         querystring: OAuthSignInRequestQuerySchema,
         params: OAuthRequestParamsSchema,
         response: {
-          200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
         },
       },
@@ -76,11 +81,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         .cookie(fastify.applicationConfig.sessionCookieName, result.value.value, {
           maxAge: fastify.applicationConfig.sessionTTLMinutes * 60,
         })
-        .send({
-          status: "success",
-          data: redirectUrl,
-        });
-      // .redirect(redirectUrl);
+        .redirect(redirectUrl);
     },
   );
 };

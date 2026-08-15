@@ -19,6 +19,7 @@ import { LogoutCommand } from "@/application/auth/use-cases/logout.js";
 import { GenerateOAuthUrlCommand } from "@/application/auth/use-cases/generate-oauth-url.js";
 import { OAuthState } from "@/application/abstractions/auth/oauth-user.type.js";
 import { OAuthSignInCommand } from "@/application/auth/use-cases/oauth-sign-in.js";
+import { UpdateProfileCommand } from "@/application/users/use-cases/update-profile.js";
 
 export type UseCases = {
   auth: {
@@ -31,6 +32,9 @@ export type UseCases = {
     logout: ICommandHandler<LogoutCommand, void>;
     generateOAuthUrl: ICommandHandler<GenerateOAuthUrlCommand, [URL, OAuthState]>;
     oauthSignIn: ICommandHandler<OAuthSignInCommand, UUID>;
+  };
+  users: {
+    updateProfile: ICommandHandler<UpdateProfileCommand, void>;
   };
 };
 

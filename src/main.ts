@@ -1,4 +1,4 @@
-import { createApp } from "./app.js";
+import { createApp } from "./app/app.js";
 import { loadConfig } from "@/infrastructure/config/index.js";
 import closeWithGrace from "close-with-grace";
 

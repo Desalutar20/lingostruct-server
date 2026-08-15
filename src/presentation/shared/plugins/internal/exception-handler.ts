@@ -5,6 +5,14 @@ import {
 } from "fastify-type-provider-zod";
 
 export default fp(async (fastify) => {
+  fastify.setNotFoundHandler((request, reply) => {
+    reply.status(404).send({
+      status: "error",
+      error: `Route ${request.url} missing.`,
+      code: `NOT_FOUND`,
+    });
+  });
+
   fastify.setErrorHandler((err, req, reply) => {
     if (typeof err === "object" && err && "statusCode" in err && err.statusCode === 429) {
       return reply.status(429).send({
@@ -21,7 +29,7 @@ export default fp(async (fastify) => {
         errors: (err.validation as { instancePath: string; message: string }[]).reduce(
           (acc: Record<string, string[]>, err) => {
             if (!acc[err.instancePath]) {
-              acc[err.instancePath.slice(1)] = [err.message];
+              acc[err.instancePath.slice(1) || "unknown"] = [err.message];
             }
 
             return acc;

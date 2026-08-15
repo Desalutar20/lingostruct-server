@@ -12,6 +12,7 @@ import { ProviderId } from "@/domain/users/provider-id.js";
 import { mapDbErrorToAppError } from "../database-errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { fromPromise } from "neverthrow";
+import { URL } from "@/domain/shared/value-objects/url.js";
 
 export class UserRepository implements IUserRepository {
   constructor(private readonly db: Kysely<DB>) {}
@@ -108,6 +109,7 @@ export class UserRepository implements IUserRepository {
       row.isVerified,
       row.googleId ? ProviderId.create(row.googleId)._unsafeUnwrap() : null,
       row.githubId ? ProviderId.create(row.githubId)._unsafeUnwrap() : null,
+      row.avatarUrl ? URL.create(row.avatarUrl)._unsafeUnwrap() : null,
     );
   }
 }

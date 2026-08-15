@@ -6,7 +6,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start:dev": "tsx --watch ./src/main.ts",
+    "dev": "tsx --watch ./src/main.ts",
     "test": "vitest --run",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",

@@ -7,8 +7,8 @@ import { ResultAsync } from "@/domain/abstractions/result.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
 import { UserId } from "@/domain/users/user-id.js";
-import { ExtractPrefix } from "@/shared/types.js";
-import { fromPromise, fromThrowable, ok, Result as Rs } from "neverthrow";
+import { ExtractPrefix } from "@/app/types.js";
+import { fromPromise, fromThrowable, ok, Result as Rs, ResultAsync as RsAsync } from "neverthrow";
 import { RedisClientType } from "redis";
 
 export class RedisSessionStore implements ISessionStore {
@@ -55,6 +55,25 @@ export class RedisSessionStore implements ISessionStore {
     return fromPromise(this.client.zRange(authCacheKeys.userSessions(userId), 0, -1), (err) =>
       internal("Failed to get Redis session IDs from Redis", err),
     ).andThen((values) => Rs.combine(values.map(UUID.create)));
+  }
+
+  updateAll(userId: UserId, session: Session): ResultAsync<void> {
+    return this.getSessionIds(userId)
+      .andThen((sessionIds) =>
+        RsAsync.combine(
+          sessionIds.map((sessionId) => {
+            const sessionKey = authCacheKeys.session(sessionId);
+
+            return fromPromise(
+              this.client.set(sessionKey, JSON.stringify(session), {
+                expiration: "KEEPTTL",
+              }),
+              (err) => internal("Failed to update all Redis sessions", err),
+            );
+          }),
+        ),
+      )
+      .map(() => undefined);
   }
 
   delete(userId: UserId, sessionId: UUID): ResultAsync<void> {

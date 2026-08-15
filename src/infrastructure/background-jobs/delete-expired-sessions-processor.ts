@@ -6,7 +6,7 @@ import { CronProcessor } from "@/infrastructure/background-jobs/cron-processor.j
 export class DeleteExpiredSessionsProcessor extends CronProcessor {
   constructor(
     private readonly logger: ILogger,
-    private readonly useCase: ICommandHandler<DeleteExpiredSessionsCommand>,
+    private readonly useCase: ICommandHandler<DeleteExpiredSessionsCommand, void>,
   ) {
     super("0 * * * *");
   }

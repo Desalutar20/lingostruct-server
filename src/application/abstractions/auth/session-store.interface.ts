@@ -13,6 +13,7 @@ export interface ISessionStore {
   ): ResultAsync<void>;
   get(sessionId: UUID): ResultAsync<Session | null>;
   getSessionIds(userId: UserId): ResultAsync<UUID[]>;
+  updateAll(userId: UserId, session: Session): ResultAsync<void>;
   delete(userId: UserId, sessionId: UUID): ResultAsync<void>;
   deleteAll(userId: UserId): ResultAsync<void>;
   deleteExpired(): ResultAsync<void>;

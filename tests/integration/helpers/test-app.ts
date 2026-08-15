@@ -1,4 +1,4 @@
-import { createApp } from "@/app.js";
+import { createApp } from "@/app/app.js";
 import { Config } from "@/application/config/index.js";
 import { loadConfig } from "@/infrastructure/config/index.js";
 import { DB } from "@/infrastructure/data/db.types.js";
@@ -76,6 +76,7 @@ export class TestApp {
 
     config.rateLimit.signUp = 15;
     config.rateLimit.resetPassword = 15;
+    config.rateLimit.updateProfile = 15;
 
     config.database.database = `test-${crypto.randomUUID()}`;
     config.redis.keyPrefix = `${crypto.randomUUID()}:`;

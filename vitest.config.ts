@@ -12,7 +12,6 @@ export default defineConfig({
     },
     fakeTimers: {
       shouldClearNativeTimers: false,
-      // doNotFake: ["nextTick", "performance", "queueMicrotask"],
     },
     fileParallelism: true,
     globals: true,
@@ -24,7 +23,6 @@ export default defineConfig({
     root: "./tests",
     isolate: false,
     testTimeout: 300000,
-
     hookTimeout: 100000,
     maxConcurrency: 15,
     maxWorkers: 5,

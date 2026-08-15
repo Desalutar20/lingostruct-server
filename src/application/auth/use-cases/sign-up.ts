@@ -18,7 +18,7 @@ import { OutboxEmailData } from "@/application/abstractions/database/outbox/outb
 import { ApplicationConfig } from "@/application/config/application.config.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { IUserRepository } from "@/domain/users/user-repository.interface.js";
-import { sleep } from "@/shared/helpers.js";
+import { sleep } from "@/app/helpers.js";
 import { failure, internal } from "@/domain/abstractions/errors.js";
 
 export class SignUpCommand implements ICommand<void> {

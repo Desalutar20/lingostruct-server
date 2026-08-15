@@ -12,7 +12,8 @@ export class Database extends Kysely<DB> {
         user: config.user,
         password: config.password,
         port: config.port,
-        max: 10,
+        //TODO
+        max: 100,
       }),
     });
 

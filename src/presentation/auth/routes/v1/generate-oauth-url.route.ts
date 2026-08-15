@@ -1,6 +1,5 @@
 import {
   ErrorResponseSchema,
-  SuccessResponseSchema,
   ValidationErrorResponseSchema,
 } from "@/presentation/shared/schemas/response.schema.js";
 import { transformToValueObjectOptional } from "@/presentation/shared/schemas/transform-value-object.js";
@@ -9,19 +8,21 @@ import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { GenerateOAuthUrlCommand } from "@/application/auth/use-cases/generate-oauth-url.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import z from "zod";
-import { OAuthRequestParamsSchema } from "@/presentation/auth/routes/v1/oauth-sign-in.js";
+import { OAuthProvider } from "@/domain/users/oauth-provider.js";
 
-const GenerateOAuthUrlRequestQuerySchema = z.object({
-  redirectPath: z
-    .string()
-    .trim()
-    .optional()
-    .transform(transformToValueObjectOptional(NonEmptyString.create)),
-});
+const GenerateOAuthUrlRequestQuerySchema = z
+  .object({
+    redirectPath: z
+      .string()
+      .trim()
+      .optional()
+      .transform(transformToValueObjectOptional(NonEmptyString.create)),
+  })
+  .strict();
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.get(
-    "/auth/:provider",
+    "/auth/google",
     {
       config: {
         rateLimit: {
@@ -32,15 +33,13 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       schema: {
         tags: ["Authentication"],
         querystring: GenerateOAuthUrlRequestQuerySchema,
-        params: OAuthRequestParamsSchema,
         response: {
-          200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
         },
       },
     },
     async (req, reply) => {
-      const command = new GenerateOAuthUrlCommand(req.params.provider, req.query.redirectPath);
+      const command = new GenerateOAuthUrlCommand(OAuthProvider.Google, req.query.redirectPath);
 
       const result = await fastify.useCases.auth.generateOAuthUrl.handle(command);
       if (result.isErr()) {
@@ -54,11 +53,43 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           maxAge: 60 * fastify.applicationConfig.oauthStateTTLMinutes,
           sameSite: "lax",
         })
-        .send({
-          status: "success",
-          data: url.toString(),
-        });
-      // .redirect(url.toString());
+        .redirect(url.toString());
+    },
+  );
+
+  fastify.get(
+    "/auth/github",
+    {
+      config: {
+        rateLimit: {
+          max: fastify.rateLimitConfig.signIn,
+          timeWindow: "1 minute",
+        },
+      },
+      schema: {
+        tags: ["Authentication"],
+        querystring: GenerateOAuthUrlRequestQuerySchema,
+        response: {
+          400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
+        },
+      },
+    },
+    async (req, reply) => {
+      const command = new GenerateOAuthUrlCommand(OAuthProvider.Github, req.query.redirectPath);
+
+      const result = await fastify.useCases.auth.generateOAuthUrl.handle(command);
+      if (result.isErr()) {
+        return mapAppErrorToHttpError(reply, result.error);
+      }
+
+      const [url, state] = result.value;
+
+      reply
+        .setCookie(fastify.applicationConfig.oauthStateCookieName, state.toString(), {
+          maxAge: 60 * fastify.applicationConfig.oauthStateTTLMinutes,
+          sameSite: "lax",
+        })
+        .redirect(url.toString());
     },
   );
 };

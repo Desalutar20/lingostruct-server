@@ -13,33 +13,35 @@ import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-hand
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 
-const SignUpRequestSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(FirstName.maxLength)
-    .transform(transformToValueObject(FirstName.create)),
-  lastName: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(LastName.maxLength)
-    .transform(transformToValueObject(LastName.create)),
-  email: z
-    .email()
-    .trim()
-    .nonempty()
-    .max(Email.maxLength)
-    .transform(transformToValueObject(Email.create)),
-  password: z
-    .string()
-    .trim()
-    .nonempty()
-    .min(Password.minLength)
-    .max(Password.maxLength)
-    .transform(transformToValueObject(Password.create)),
-});
+const SignUpRequestSchema = z
+  .object({
+    firstName: z
+      .string()
+      .trim()
+      .nonempty()
+      .max(FirstName.maxLength)
+      .transform(transformToValueObject(FirstName.create)),
+    lastName: z
+      .string()
+      .trim()
+      .nonempty()
+      .max(LastName.maxLength)
+      .transform(transformToValueObject(LastName.create)),
+    email: z
+      .email()
+      .trim()
+      .nonempty()
+      .max(Email.maxLength)
+      .transform(transformToValueObject(Email.create)),
+    password: z
+      .string()
+      .trim()
+      .nonempty()
+      .min(Password.minLength)
+      .max(Password.maxLength)
+      .transform(transformToValueObject(Password.create)),
+  })
+  .strict();
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(

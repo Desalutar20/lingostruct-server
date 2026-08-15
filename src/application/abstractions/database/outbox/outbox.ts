@@ -1,7 +1,7 @@
 import { Entity } from "@/domain/abstractions/entity.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
 import { OutboxType } from "./outbox-type.js";
-import { Nullable } from "@/shared/types.js";
+import { Nullable } from "@/app/types.js";
 
 export class Outbox<T> extends Entity {
   private constructor(

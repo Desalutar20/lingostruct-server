@@ -10,14 +10,16 @@ import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { ForgotPasswordCommand } from "@/application/auth/use-cases/forgot-password.js";
 
-const ForgotPasswordRequestSchema = z.object({
-  email: z
-    .email()
-    .trim()
-    .nonempty()
-    .max(Email.maxLength)
-    .transform(transformToValueObject(Email.create)),
-});
+const ForgotPasswordRequestSchema = z
+  .object({
+    email: z
+      .email()
+      .trim()
+      .nonempty()
+      .max(Email.maxLength)
+      .transform(transformToValueObject(Email.create)),
+  })
+  .strict();
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
