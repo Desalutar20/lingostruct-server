@@ -29,7 +29,7 @@ describe("Users", () => {
       });
     });
 
-    it("Should db", async ({ signal }) => {
+    it("Should update user data in the database", async ({ signal }) => {
       await TestApp.run(async (app) => {
         const { cookies } = await app.signUpAndSignIn(validData, signal);
 

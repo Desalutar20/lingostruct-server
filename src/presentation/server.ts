@@ -90,8 +90,8 @@ export const createServer = async (
     },
   });
 
-  app.addHook("onListen", () => onListen?.());
-  app.addHook("preClose", () => onClose?.());
+  app.addHook("onListen", async () => await onListen?.());
+  app.addHook("onClose", async () => await onClose?.());
 
   await app.ready();
 

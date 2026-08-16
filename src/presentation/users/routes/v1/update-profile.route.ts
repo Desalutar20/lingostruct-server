@@ -14,29 +14,30 @@ import { URL } from "@/domain/shared/value-objects/url.js";
 import { UserId } from "@/domain/users/user-id.js";
 import { UpdateProfileCommand } from "@/application/users/use-cases/update-profile.js";
 
-const UpdateProfileSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(FirstName.maxLength)
-    .optional()
-    .transform(transformToValueObjectOptional(FirstName.create)),
-  lastName: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(LastName.maxLength)
-    .optional()
-    .transform(transformToValueObjectOptional(LastName.create)),
-  avatarUrl: z
-    .url()
-    .trim()
-    .nonempty()
-    .optional()
-    .transform(transformToValueObjectOptional(URL.create)),
-});
-// .strict();
+const UpdateProfileSchema = z
+  .object({
+    firstName: z
+      .string()
+      .trim()
+      .nonempty()
+      .max(FirstName.maxLength)
+      .optional()
+      .transform(transformToValueObjectOptional(FirstName.create)),
+    lastName: z
+      .string()
+      .trim()
+      .nonempty()
+      .max(LastName.maxLength)
+      .optional()
+      .transform(transformToValueObjectOptional(LastName.create)),
+    avatarUrl: z
+      .url()
+      .trim()
+      .nonempty()
+      .optional()
+      .transform(transformToValueObjectOptional(URL.create)),
+  })
+  .strict();
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.patch(
