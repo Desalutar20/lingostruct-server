@@ -10,25 +10,16 @@ import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { VerifyAccountCommand } from "@/application/auth/use-cases/verify-account.js";
+import { EmailSchema, NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
 
 const VerifyAccountRequestSchema = z
   .object({
-    email: z
-      .email()
-      .trim()
-      .nonempty()
-      .max(Email.maxLength)
-      .transform(transformToValueObject(Email.create)),
-    token: z
-      .string()
-      .trim()
-      .nonempty()
-      .max(200)
-      .transform(
-        transformToValueObject((val) =>
-          NonEmptyString.create(val, "token", "Token", { maxLength: 200 }),
-        ),
+    email: EmailSchema.max(Email.maxLength).transform(transformToValueObject(Email.create)),
+    token: NonEmptyStringSchema.max(200).transform(
+      transformToValueObject((val) =>
+        NonEmptyString.create(val, "token", "Token", { maxLength: 200 }),
       ),
+    ),
   })
   .strict();
 

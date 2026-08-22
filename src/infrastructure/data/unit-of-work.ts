@@ -1,7 +1,7 @@
 import { Kysely } from "kysely";
 import { IUnitOfWork } from "@/application/abstractions/database/unit-of-work.interface.js";
-import { IUserRepository } from "@/domain/users/user-repository.interface.js";
-import { UserRepository } from "./users/user-repository.js";
+import { IUserRepository } from "@/domain/user/user-repository.interface.js";
+import { UserRepository } from "./user/user-repository.js";
 import { DB } from "./db.types.js";
 import { OutboxRepository } from "./outbox/outbox-repository.js";
 import { IOutboxRepository } from "@/application/abstractions/database/outbox/outbox-repository.interface.js";

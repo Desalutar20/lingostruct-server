@@ -8,15 +8,14 @@ import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { GenerateOAuthUrlCommand } from "@/application/auth/use-cases/generate-oauth-url.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import z from "zod";
-import { OAuthProvider } from "@/domain/users/oauth-provider.js";
+import { OAuthProvider } from "@/domain/user/oauth-provider.js";
+import { NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
 
 const GenerateOAuthUrlRequestQuerySchema = z
   .object({
-    redirectPath: z
-      .string()
-      .trim()
-      .optional()
-      .transform(transformToValueObjectOptional(NonEmptyString.create)),
+    redirectPath: NonEmptyStringSchema.transform(
+      transformToValueObjectOptional(NonEmptyString.create),
+    ),
   })
   .strict();
 
@@ -39,7 +38,10 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       },
     },
     async (req, reply) => {
-      const command = new GenerateOAuthUrlCommand(OAuthProvider.Google, req.query.redirectPath);
+      const command = new GenerateOAuthUrlCommand(
+        OAuthProvider.Google,
+        req.query.redirectPath ?? undefined,
+      );
 
       const result = await fastify.useCases.auth.generateOAuthUrl.handle(command);
       if (result.isErr()) {
@@ -53,7 +55,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           maxAge: 60 * fastify.applicationConfig.oauthStateTTLMinutes,
           sameSite: "lax",
         })
-        .redirect(url.toString());
+        .redirect(url.value);
     },
   );
 
@@ -75,7 +77,10 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       },
     },
     async (req, reply) => {
-      const command = new GenerateOAuthUrlCommand(OAuthProvider.Github, req.query.redirectPath);
+      const command = new GenerateOAuthUrlCommand(
+        OAuthProvider.Github,
+        req.query.redirectPath ?? undefined,
+      );
 
       const result = await fastify.useCases.auth.generateOAuthUrl.handle(command);
       if (result.isErr()) {
@@ -89,7 +94,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           maxAge: 60 * fastify.applicationConfig.oauthStateTTLMinutes,
           sameSite: "lax",
         })
-        .redirect(url.toString());
+        .redirect(url.value);
     },
   );
 };

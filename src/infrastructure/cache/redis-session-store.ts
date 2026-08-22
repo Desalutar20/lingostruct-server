@@ -6,7 +6,7 @@ import { internal } from "@/domain/abstractions/errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { UserId } from "@/domain/users/user-id.js";
+import { UserId } from "@/domain/user/user-id.js";
 import { ExtractPrefix } from "@/app/types.js";
 import { fromPromise, fromThrowable, ok, Result as Rs, ResultAsync as RsAsync } from "neverthrow";
 import { RedisClientType } from "redis";

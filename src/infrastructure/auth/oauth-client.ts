@@ -1,8 +1,10 @@
 import { IOAuthClient } from "@/application/abstractions/auth/oauth-client.interface.js";
-import { OAuthState, OAuthUser } from "@/application/abstractions/auth/oauth-user.type.js";
+import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
+import { OAuthUser } from "@/application/abstractions/auth/oauth-user.type.js";
 import { OAuthConfig } from "@/application/config/oauth.config.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
+import { URL } from "@/domain/shared/value-objects/url.js";
 
 export abstract class OAuthClient implements IOAuthClient {
   protected readonly clientId: string;

@@ -1,18 +1,19 @@
 import { IOAuthClientFactory } from "@/application/abstractions/auth/oauth-client-factory.interface.js";
-import { OAuthState } from "@/application/abstractions/auth/oauth-user.type.js";
+import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
 import { ISessionStore } from "@/application/abstractions/auth/session-store.interface.js";
 import { Session } from "@/application/abstractions/auth/session.type.js";
 import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
+import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
 import { ApplicationConfig } from "@/application/config/application.config.js";
 import { failure } from "@/domain/abstractions/errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { OAuthProvider } from "@/domain/users/oauth-provider.js";
-import { IUserRepository } from "@/domain/users/user-repository.interface.js";
-import { User } from "@/domain/users/user.js";
+import { OAuthProvider } from "@/domain/user/oauth-provider.js";
+import { IUserRepository } from "@/domain/user/user-repository.interface.js";
+import { User } from "@/domain/user/user.js";
 import { errAsync, ok, okAsync } from "neverthrow";
 
 export class OAuthSignInCommand implements ICommand<UUID> {
@@ -29,6 +30,7 @@ export class OAuthSignInCommandHandler implements ICommandHandler<OAuthSignInCom
     private readonly userRepository: IUserRepository,
     private readonly oauthClientFactory: IOAuthClientFactory,
     private readonly sessionStore: ISessionStore,
+    private readonly objectStorage: IObjectStorage,
     private readonly config: ApplicationConfig,
   ) {}
 
@@ -46,7 +48,7 @@ export class OAuthSignInCommandHandler implements ICommandHandler<OAuthSignInCom
       )
       .andThen(({ user, oauthUser }) => {
         if (!user) {
-          const newUser = User.create(null, null, oauthUser.email, null);
+          const newUser = new User(null, null, oauthUser.email, null);
           newUser.linkProvider(command.provider, oauthUser.providerId);
           newUser.verify();
 
@@ -71,14 +73,24 @@ export class OAuthSignInCommandHandler implements ICommandHandler<OAuthSignInCom
             return okAsync(user);
           })
           .andThen((user) => {
+            if (user.avatarId === null) {
+              return okAsync({ user, avatarUrl: null });
+            }
+
+            return this.objectStorage
+              .createDownloadUrl(user.avatarId)
+              .map((avatarUrl) => ({ user, avatarUrl }));
+          })
+          .andThen(({ user, avatarUrl }) => {
             const sessionId = UUID.generate();
 
             const session: Session = {
               id: user.id.value,
               email: user.email.value,
-              firstName: user.firstName?.value,
-              lastName: user.lastName?.value,
+              firstName: user.firstName?.value ?? null,
+              lastName: user.lastName?.value ?? null,
               role: user.role.value,
+              avatarUrl: avatarUrl?.value ?? null,
             };
 
             const sessionTTLSeconds = PositiveInt.create(

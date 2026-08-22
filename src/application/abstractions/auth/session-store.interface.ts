@@ -2,7 +2,7 @@ import { Session } from "@/application/abstractions/auth/session.type.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { UserId } from "@/domain/users/user-id.js";
+import { UserId } from "@/domain/user/user-id.js";
 
 export interface ISessionStore {
   save(

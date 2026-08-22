@@ -9,15 +9,11 @@ import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-hand
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { ForgotPasswordCommand } from "@/application/auth/use-cases/forgot-password.js";
+import { EmailSchema } from "@/presentation/shared/schemas/common.schema.js";
 
 const ForgotPasswordRequestSchema = z
   .object({
-    email: z
-      .email()
-      .trim()
-      .nonempty()
-      .max(Email.maxLength)
-      .transform(transformToValueObject(Email.create)),
+    email: EmailSchema.max(Email.maxLength).transform(transformToValueObject(Email.create)),
   })
   .strict();
 

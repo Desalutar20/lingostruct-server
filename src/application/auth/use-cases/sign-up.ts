@@ -1,13 +1,13 @@
 import { IUnitOfWork } from "@/application/abstractions/database/unit-of-work.interface.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
-import { FirstName } from "@/domain/users/first-name.js";
-import { LastName } from "@/domain/users/last-name.js";
-import { User } from "@/domain/users/user.js";
+import { FirstName } from "@/domain/user/first-name.js";
+import { LastName } from "@/domain/user/last-name.js";
+import { User } from "@/domain/user/user.js";
 import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
 import { Outbox } from "@/application/abstractions/database/outbox/outbox.js";
 import { OutboxType } from "@/application/abstractions/database/outbox/outbox-type.js";
-import { Password } from "@/domain/users/password.js";
+import { Password } from "@/domain/user/password.js";
 import { IPasswordHasher } from "@/application/abstractions/security/password-hasher.interface.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { ITokenGenerator } from "@/application/abstractions/security/token-generator.interface.js";
@@ -17,7 +17,7 @@ import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
 import { OutboxEmailData } from "@/application/abstractions/database/outbox/outbox-data.type.js";
 import { ApplicationConfig } from "@/application/config/application.config.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
-import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+import { IUserRepository } from "@/domain/user/user-repository.interface.js";
 import { sleep } from "@/app/helpers.js";
 import { failure, internal } from "@/domain/abstractions/errors.js";
 
@@ -50,10 +50,11 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand, void
     return this.userRepository
       .getByEmail(command.email)
       .andThen((user) => {
-        if (user)
+        if (user) {
           return fromPromise(sleep(1000), (err) => internal("", err)).andThen(() =>
             err(failure("User already exists", "USER_ALREADY_EXISTS")),
           );
+        }
 
         return okAsync();
       })
@@ -64,12 +65,7 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand, void
       )
       .andThen(() => this.passwordHasher.hash(command.password))
       .andThen((hashedPassword) => {
-        const user = User.create(
-          command.firstName,
-          command.lastName,
-          command.email,
-          hashedPassword,
-        );
+        const user = new User(command.firstName, command.lastName, command.email, hashedPassword);
 
         const token = this.tokenGenerator.generate();
         return this.cache

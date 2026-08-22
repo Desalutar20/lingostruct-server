@@ -11,7 +11,7 @@ export class DeleteExpiredSessionsCommandHandler implements ICommandHandler<
 > {
   constructor(private readonly sessionStore: ISessionStore) {}
 
-  handle(command: DeleteExpiredSessionsCommand): ResultAsync<void> {
+  handle(_command: DeleteExpiredSessionsCommand): ResultAsync<void> {
     return this.sessionStore.deleteExpired();
   }
 }

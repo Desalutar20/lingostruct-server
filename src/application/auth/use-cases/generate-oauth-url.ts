@@ -1,12 +1,13 @@
 import { IOAuthClientFactory } from "@/application/abstractions/auth/oauth-client-factory.interface.js";
-import { OAuthState } from "@/application/abstractions/auth/oauth-user.type.js";
 import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { OAuthProvider } from "@/domain/users/oauth-provider.js";
+import { OAuthProvider } from "@/domain/user/oauth-provider.js";
 import { okAsync } from "neverthrow";
+import { URL } from "@/domain/shared/value-objects/url.js";
+import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
 
 export class GenerateOAuthUrlCommand implements ICommand<[URL, OAuthState]> {
   constructor(

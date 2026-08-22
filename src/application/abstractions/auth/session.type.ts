@@ -1,4 +1,4 @@
-import { UserRole } from "@/domain/users/user-role.js";
+import { UserRole } from "@/domain/user/user-role.js";
 import { Nullable } from "@/app/types.js";
 
 export type Session = {

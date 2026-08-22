@@ -1,11 +1,11 @@
 import { IOAuthClient } from "@/application/abstractions/auth/oauth-client.interface.js";
-import { OAuthState, OAuthUser } from "@/application/abstractions/auth/oauth-user.type.js";
+import { OAuthUser } from "@/application/abstractions/auth/oauth-user.type.js";
 import { OAuthConfig } from "@/application/config/oauth.config.js";
 import { internal } from "@/domain/abstractions/errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
-import { ProviderId } from "@/domain/users/provider-id.js";
+import { ProviderId } from "@/domain/user/provider-id.js";
 import {
   GoogleOAuthUserSchema,
   GoogleOAuthAccessTokenSchema,
@@ -13,6 +13,8 @@ import {
 import { OAuthClient } from "@/infrastructure/auth/oauth-client.js";
 import { err, fromPromise } from "neverthrow";
 import z from "zod";
+import { URL } from "@/domain/shared/value-objects/url.js";
+import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
 
 export class GoogleOAuthClient extends OAuthClient implements IOAuthClient {
   constructor(config: OAuthConfig) {
@@ -20,7 +22,7 @@ export class GoogleOAuthClient extends OAuthClient implements IOAuthClient {
   }
 
   generateRedirectUrl(state: OAuthState): URL {
-    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    const url = new globalThis.URL("https://accounts.google.com/o/oauth2/v2/auth");
 
     url.searchParams.set("client_id", this.clientId);
     url.searchParams.set("redirect_uri", this.redirectUrl);
@@ -30,7 +32,7 @@ export class GoogleOAuthClient extends OAuthClient implements IOAuthClient {
     url.searchParams.set("access_type", "offline");
     url.searchParams.set("state", state.toString());
 
-    return url;
+    return URL.create(url.toString())._unsafeUnwrap();
   }
 
   getUser(code: NonEmptyString): ResultAsync<OAuthUser> {

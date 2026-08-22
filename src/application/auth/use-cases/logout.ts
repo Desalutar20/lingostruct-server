@@ -3,7 +3,7 @@ import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { UserId } from "@/domain/users/user-id.js";
+import { UserId } from "@/domain/user/user-id.js";
 
 export class LogoutCommand implements ICommand<void> {
   constructor(

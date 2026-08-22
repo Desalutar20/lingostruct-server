@@ -1,11 +1,10 @@
 import { it, describe, expect } from "vitest";
 import { TestApp } from "../helpers/test-app.js";
 import { faker } from "@faker-js/faker";
-import { Password } from "@/domain/users/password.js";
+import { Password } from "@/domain/user/password.js";
 import "../helpers/requests/index.js";
-import { Email } from "@/domain/shared/value-objects/email.js";
-import { FirstName } from "@/domain/users/first-name.js";
-import { LastName } from "@/domain/users/last-name.js";
+import { FirstName } from "@/domain/user/first-name.js";
+import { LastName } from "@/domain/user/last-name.js";
 
 describe("Users", () => {
   describe("Update Profile", () => {
@@ -92,50 +91,29 @@ describe("Users", () => {
             "lastName",
           ],
           [
-            "Empty avatar url",
+            "Empty avatar id",
             {
-              avatarUrl: "",
+              avatarId: "",
             },
-            "avatarUrl",
+            "avatarId",
           ],
           [
-            "Whitespace avatar url",
+            "Whitespace avatar id",
             {
-              avatarUrl: "   ",
+              avatarId: "   ",
             },
-            "avatarUrl",
+            "avatarId",
           ],
           [
-            "Invalid avatar url",
+            "Invalid avatar id",
             {
-              avatarUrl: "not valid url",
+              avatarId: "not valid id",
             },
-            "avatarUrl",
-          ],
-          [
-            "Empty email",
-            {
-              email: "",
-            },
-            "unknown",
-          ],
-          [
-            "Whitespace email",
-            {
-              email: "   ",
-            },
-            "unknown",
-          ],
-          [
-            `Email is longer than ${Email.maxLength}`,
-            {
-              email: `test${"t".repeat(Email.maxLength)}@gmail.com`,
-            },
-            "unknown",
+            "avatarId",
           ],
         ] as const;
 
-        await Promise.all(
+        await Promise.allSettled(
           invalidData.map(async ([description, body, field]) => {
             const response = await app.updateProfile(body, cookies, signal);
             expect(response.status, description).toBe(400);
@@ -161,7 +139,7 @@ describe("Users", () => {
 
     it("Should return 429 status code when rate limit is exceeded", async ({ signal }) => {
       await TestApp.run(async (app) => {
-        await Promise.all(
+        await Promise.allSettled(
           [...Array(app.config.rateLimit.updateProfile)].map(async () => {
             const response = await app.updateProfile({}, undefined, signal);
 

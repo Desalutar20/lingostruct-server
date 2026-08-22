@@ -8,10 +8,11 @@ import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { Password } from "@/domain/users/password.js";
-import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+import { Password } from "@/domain/user/password.js";
+import { IUserRepository } from "@/domain/user/user-repository.interface.js";
 import { okAsync } from "neverthrow";
 import { ISessionStore } from "@/application/abstractions/auth/session-store.interface.js";
+import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
 
 export class SignInCommand implements ICommand<Readonly<[Session, UUID]>> {
   constructor(
@@ -28,6 +29,7 @@ export class SignInCommandHandler implements ICommandHandler<
     private readonly userRepository: IUserRepository,
     private readonly passwordHasher: IPasswordHasher,
     private readonly sessionStore: ISessionStore,
+    private readonly objectStorage: IObjectStorage,
     private readonly config: ApplicationConfig,
   ) {}
 
@@ -38,14 +40,20 @@ export class SignInCommandHandler implements ICommandHandler<
         if (user === null || user.hashedPassword === null || !user.isValid)
           return invalidCredentialsError;
 
-        return this.passwordHasher.verify(command.password, user.hashedPassword).map((success) => ({
-          success,
-          user,
-        }));
-      })
-      .andThen(({ success, user }) => {
-        if (!success) return invalidCredentialsError;
+        return this.passwordHasher
+          .verify(command.password, user.hashedPassword)
+          .andThen((success) => (!success ? invalidCredentialsError : okAsync(user)))
+          .andThen((user) => {
+            if (user.avatarId === null) {
+              return okAsync({ user, avatarUrl: null });
+            }
 
+            return this.objectStorage
+              .createDownloadUrl(user.avatarId)
+              .map((avatarUrl) => ({ user, avatarUrl }));
+          });
+      })
+      .andThen(({ user, avatarUrl }) => {
         const sessionId = UUID.generate();
 
         const sessionTTLSeconds = PositiveInt.create(
@@ -58,7 +66,7 @@ export class SignInCommandHandler implements ICommandHandler<
           firstName: user.firstName?.value ?? null,
           lastName: user.lastName?.value ?? null,
           role: user.role.value,
-          avatarUrl: user.avatarUrl?.value ?? null,
+          avatarUrl: avatarUrl?.value ?? null,
         };
 
         return this.sessionStore

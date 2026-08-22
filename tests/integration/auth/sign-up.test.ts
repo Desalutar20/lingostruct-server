@@ -1,10 +1,10 @@
 import { it, describe, expect } from "vitest";
 import { TestApp } from "../helpers/test-app.js";
 import { faker } from "@faker-js/faker";
-import { Password } from "@/domain/users/password.js";
+import { Password } from "@/domain/user/password.js";
 import "../helpers/requests/index.js";
-import { FirstName } from "@/domain/users/first-name.js";
-import { LastName } from "@/domain/users/last-name.js";
+import { FirstName } from "@/domain/user/first-name.js";
+import { LastName } from "@/domain/user/last-name.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 
 describe("Authentication", () => {
@@ -147,7 +147,7 @@ describe("Authentication", () => {
           ],
         ] as const;
 
-        await Promise.all(
+        await Promise.allSettled(
           invalidData.map(async ([description, body, field]) => {
             const response = await app.signUp(body, signal);
             expect(response.status, description).toBe(400);
@@ -166,7 +166,7 @@ describe("Authentication", () => {
 
     it("Should return 429 status code when rate limit is exceeded", async ({ signal }) => {
       await TestApp.run(async (app) => {
-        await Promise.all(
+        await Promise.allSettled(
           [...Array(app.config.rateLimit.signUp)].map(async () => {
             const response = await app.signUp({ ...validData, email: "invalid email" }, signal);
 

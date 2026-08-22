@@ -18,7 +18,7 @@ export class BackgroundJobs {
     emailSender: IEmailSender,
     logger: ILogger,
     emailTemplateRenderer: EmailTemplateRenderer,
-    deleteExpiredUsersUseCase: ICommandHandler<DeleteExpiredSessionsCommand>,
+    deleteExpiredUsersUseCase: ICommandHandler<DeleteExpiredSessionsCommand, void>,
   ) {
     this.outboxEmailProcessor = new OutboxEmailProcessor(
       unitOfWork,

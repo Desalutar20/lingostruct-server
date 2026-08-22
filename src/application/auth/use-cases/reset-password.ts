@@ -8,9 +8,9 @@ import { invalidTokenError, userNotFoundError } from "@/application/auth/auth-er
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
-import { Password } from "@/domain/users/password.js";
-import { UserId } from "@/domain/users/user-id.js";
-import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+import { Password } from "@/domain/user/password.js";
+import { UserId } from "@/domain/user/user-id.js";
+import { IUserRepository } from "@/domain/user/user-repository.interface.js";
 
 export class ResetPasswordCommand implements ICommand<void> {
   constructor(

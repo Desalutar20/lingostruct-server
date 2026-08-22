@@ -1,7 +1,7 @@
 import { it, describe, expect } from "vitest";
 import { TestApp } from "../helpers/test-app.js";
 import { faker } from "@faker-js/faker";
-import { Password } from "@/domain/users/password.js";
+import { Password } from "@/domain/user/password.js";
 import "../helpers/requests/index.js";
 
 describe("Authentication", () => {
@@ -49,7 +49,7 @@ describe("Authentication", () => {
 
     it("Should return 429 status code when rate limit is exceeded", async ({ signal }) => {
       await TestApp.run(async (app) => {
-        await Promise.all(
+        await Promise.allSettled(
           [...Array(app.config.rateLimit.logout)].map(async () => {
             const response = await app.logout(undefined, signal);
 

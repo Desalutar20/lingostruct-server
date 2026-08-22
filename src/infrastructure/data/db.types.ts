@@ -33,7 +33,7 @@ export interface Outbox {
 }
 
 export interface Users {
-  avatarUrl: string | null;
+  avatarId: string | null;
   createdAt: Generated<Timestamp>;
   email: string;
   firstName: string | null;
@@ -48,7 +48,20 @@ export interface Users {
   updatedAt: Generated<Timestamp>;
 }
 
+export interface Workspace {
+  city: string | null;
+  country: string | null;
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  name: string;
+  postalCode: string | null;
+  street: string | null;
+  streetNumber: string | null;
+  updatedAt: Generated<Timestamp>;
+}
+
 export interface DB {
   outbox: Outbox;
   users: Users;
+  workspace: Workspace;
 }

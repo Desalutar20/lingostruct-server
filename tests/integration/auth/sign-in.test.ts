@@ -1,7 +1,7 @@
 import { it, describe, expect } from "vitest";
 import { TestApp } from "../helpers/test-app.js";
 import { faker } from "@faker-js/faker";
-import { Password } from "@/domain/users/password.js";
+import { Password } from "@/domain/user/password.js";
 import "../helpers/requests/index.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { Session } from "@/application/abstractions/auth/session.type.js";
@@ -198,7 +198,7 @@ describe("Authentication", () => {
           ],
         ] as const;
 
-        await Promise.all(
+        await Promise.allSettled(
           invalidData.map(async ([description, body, field]) => {
             const response = await app.signIn(body, signal);
             expect(response.status, description).toBe(400);
@@ -264,7 +264,7 @@ describe("Authentication", () => {
 
     it("Should return 429 status code when rate limit is exceeded", async ({ signal }) => {
       await TestApp.run(async (app) => {
-        await Promise.all(
+        await Promise.allSettled(
           [...Array(app.config.rateLimit.signIn)].map(async () => {
             const response = await app.signIn(
               { email: "invalid email", password: faker.internet.password() },

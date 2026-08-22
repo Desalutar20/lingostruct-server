@@ -1,11 +1,10 @@
 import { IOAuthClient } from "@/application/abstractions/auth/oauth-client.interface.js";
-import { OAuthState, OAuthUser } from "@/application/abstractions/auth/oauth-user.type.js";
 import { OAuthConfig } from "@/application/config/oauth.config.js";
 import { internal } from "@/domain/abstractions/errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
-import { ProviderId } from "@/domain/users/provider-id.js";
+import { ProviderId } from "@/domain/user/provider-id.js";
 import {
   GithubOAuthAccessTokenSchema,
   GithubOAuthUserEmailSchema,
@@ -14,20 +13,23 @@ import {
 import { OAuthClient } from "@/infrastructure/auth/oauth-client.js";
 import { err, fromPromise } from "neverthrow";
 import z from "zod";
+import { URL } from "@/domain/shared/value-objects/url.js";
+import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
+import { OAuthUser } from "@/application/abstractions/auth/oauth-user.type.js";
 
 export class GithubOAuthClient extends OAuthClient implements IOAuthClient {
   constructor(config: OAuthConfig) {
     super(config, "github");
   }
   generateRedirectUrl(state: OAuthState): URL {
-    const url = new URL("https://github.com/login/oauth/authorize");
+    const url = new globalThis.URL("https://github.com/login/oauth/authorize");
 
     url.searchParams.set("client_id", this.clientId);
     url.searchParams.set("redirect_uri", this.redirectUrl);
     url.searchParams.set("state", state.toString());
     url.searchParams.set("scope", "read:user user:email");
 
-    return url;
+    return URL.create(url.toString())._unsafeUnwrap();
   }
 
   public getUser(code: NonEmptyString): ResultAsync<OAuthUser> {

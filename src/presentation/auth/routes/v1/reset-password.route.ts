@@ -1,5 +1,5 @@
 import { Email } from "@/domain/shared/value-objects/email.js";
-import { Password } from "@/domain/users/password.js";
+import { Password } from "@/domain/user/password.js";
 import {
   ErrorResponseSchema,
   SuccessResponseSchema,
@@ -11,30 +11,17 @@ import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { ResetPasswordCommand } from "@/application/auth/use-cases/reset-password.js";
+import { EmailSchema, NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
 
 const ResetPasswordRequestSchema = z.object({
-  email: z
-    .email()
-    .trim()
-    .nonempty()
-    .max(Email.maxLength)
-    .transform(transformToValueObject(Email.create)),
+  email: EmailSchema.max(Email.maxLength).transform(transformToValueObject(Email.create)),
 
-  token: z
-    .string()
-    .trim()
-    .nonempty()
-    .max(200)
-    .transform(
-      transformToValueObject((val) =>
-        NonEmptyString.create(val, "token", "Token", { maxLength: 200 }),
-      ),
+  token: NonEmptyStringSchema.max(200).transform(
+    transformToValueObject((val) =>
+      NonEmptyString.create(val, "token", "Token", { maxLength: 200 }),
     ),
-  newPassword: z
-    .string()
-    .trim()
-    .nonempty()
-    .min(Password.minLength)
+  ),
+  newPassword: NonEmptyStringSchema.min(Password.minLength)
     .max(Password.maxLength)
     .transform(transformToValueObject(Password.create)),
 });

@@ -1,12 +1,11 @@
 import { validation } from "@/domain/abstractions/errors.js";
 import { err, ok } from "neverthrow";
 import { Result } from "@/domain/abstractions/result.js";
+import { ValueObject } from "@/domain/shared/value-objects/value-object.js";
 
-export class NonEmptyString {
-  protected readonly _value: string;
-
-  protected constructor(value: string) {
-    this._value = value;
+export class NonEmptyString extends ValueObject<NonEmptyString> {
+  protected constructor(protected readonly _value: string) {
+    super();
   }
 
   public equals(other: NonEmptyString): boolean {

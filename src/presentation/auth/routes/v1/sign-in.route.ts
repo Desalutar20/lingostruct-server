@@ -1,6 +1,6 @@
 import { SignInCommand } from "@/application/auth/use-cases/sign-in.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
-import { Password } from "@/domain/users/password.js";
+import { Password } from "@/domain/user/password.js";
 import {
   ErrorResponseSchema,
   SuccessResponseSchema,
@@ -11,20 +11,12 @@ import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-hand
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { SessionSchema } from "@/presentation/shared/schemas/session.schema.js";
+import { EmailSchema, NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
 
 const SignInRequestSchema = z
   .object({
-    email: z
-      .email()
-      .trim()
-      .nonempty()
-      .max(Email.maxLength)
-      .transform(transformToValueObject(Email.create)),
-    password: z
-      .string()
-      .trim()
-      .nonempty()
-      .min(Password.minLength)
+    email: EmailSchema.max(Email.maxLength).transform(transformToValueObject(Email.create)),
+    password: NonEmptyStringSchema.min(Password.minLength)
       .max(Password.maxLength)
       .transform(transformToValueObject(Password.create)),
   })

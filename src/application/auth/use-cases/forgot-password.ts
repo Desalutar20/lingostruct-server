@@ -11,7 +11,7 @@ import { ApplicationConfig } from "@/application/config/application.config.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
-import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+import { IUserRepository } from "@/domain/user/user-repository.interface.js";
 import { okAsync } from "neverthrow";
 
 export class ForgotPasswordCommand implements ICommand<void> {

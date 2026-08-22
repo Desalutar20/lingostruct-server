@@ -1,5 +1,5 @@
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
-import { UserId } from "@/domain/users/user-id.js";
+import { UserId } from "@/domain/user/user-id.js";
 
 export const authCacheKeys = {
   verificationToken: (token: string) => `verification-token:${token}` as const,

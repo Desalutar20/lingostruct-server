@@ -1,8 +1,8 @@
 import { IPasswordHasher } from "@/application/abstractions/security/password-hasher.interface.js";
 import { internal } from "@/domain/abstractions/errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
-import { HashedPassword } from "@/domain/users/hashed-password.js";
-import { Password } from "@/domain/users/password.js";
+import { HashedPassword } from "@/domain/user/hashed-password.js";
+import { Password } from "@/domain/user/password.js";
 
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { fromPromise } from "neverthrow";

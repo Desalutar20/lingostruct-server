@@ -17,9 +17,19 @@ import { ResetPasswordCommand } from "@/application/auth/use-cases/reset-passwor
 import { AuthenticateCommand } from "@/application/auth/use-cases/authenticate.js";
 import { LogoutCommand } from "@/application/auth/use-cases/logout.js";
 import { GenerateOAuthUrlCommand } from "@/application/auth/use-cases/generate-oauth-url.js";
-import { OAuthState } from "@/application/abstractions/auth/oauth-user.type.js";
 import { OAuthSignInCommand } from "@/application/auth/use-cases/oauth-sign-in.js";
-import { UpdateProfileCommand } from "@/application/users/use-cases/update-profile.js";
+import { UpdateProfileCommand } from "@/application/user/use-cases/update-profile.js";
+import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
+import { URL } from "@/domain/shared/value-objects/url.js";
+import { CreatePresignedUrlCommand } from "@/application/object-storage/use-cases/create-presigned-url.js";
+import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
+import { Nullable } from "@/app/types.js";
+import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
+import { IQueryHandler } from "@/application/abstractions/cqrs/query-handler.interface.js";
+import { GetUsersQuery } from "@/application/admin/users/use-cases/get-users.js";
+import { KeysetPaginated } from "@/domain/shared/pagination/keyset-paginated.js";
+import { UserId } from "@/domain/user/user-id.js";
+import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
 
 export type UseCases = {
   auth: {
@@ -34,7 +44,14 @@ export type UseCases = {
     oauthSignIn: ICommandHandler<OAuthSignInCommand, UUID>;
   };
   users: {
-    updateProfile: ICommandHandler<UpdateProfileCommand, void>;
+    getUsers: IQueryHandler<GetUsersQuery, KeysetPaginated<AdminUserDto, UserId>>;
+    updateProfile: ICommandHandler<UpdateProfileCommand, Nullable<URL>>;
+  };
+  files: {
+    createPresignedUrl: ICommandHandler<
+      CreatePresignedUrlCommand,
+      { url: URL; key: NonEmptyString }
+    >;
   };
 };
 
@@ -43,6 +60,7 @@ declare module "fastify" {
     applicationConfig: ApplicationConfig;
     rateLimitConfig: RateLimitConfig;
     useCases: UseCases;
+    objectStorage: IObjectStorage;
   }
 }
 

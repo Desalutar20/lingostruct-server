@@ -62,23 +62,6 @@ export class Redis implements ICache {
     ).map(() => undefined);
   }
 
-  async deleteExpiredSessions() {
-    const pattern = "sessions:*";
-    const keys = await this.client.keys(pattern);
-
-    for (const key of keys) {
-      const now = Date.now();
-      const sessions = await this.client.zRangeByScore(key, -Infinity, now);
-      if (sessions.length === 0) continue;
-
-      await this.client.zRem(key, sessions);
-
-      for (const session of sessions) {
-        await this.del(`session:${session}`);
-      }
-    }
-  }
-
   private executeGet<T extends string | number | Buffer>(
     key: string,
     type: { type: "get" } | { type: "getDel" } | { type: "getEx"; options: { ex: number } },

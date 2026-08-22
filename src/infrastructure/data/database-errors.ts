@@ -1,4 +1,4 @@
-import { UserConstraints } from "./users/user-constraints.js";
+import { UserConstraints } from "./user/user-constraints.js";
 import { AppError, failure, internal } from "@/domain/abstractions/errors.js";
 
 const PostgresErrorCode = {

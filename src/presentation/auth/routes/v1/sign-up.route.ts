@@ -1,8 +1,8 @@
 import { SignUpCommand } from "@/application/auth/use-cases/sign-up.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
-import { FirstName } from "@/domain/users/first-name.js";
-import { LastName } from "@/domain/users/last-name.js";
-import { Password } from "@/domain/users/password.js";
+import { FirstName } from "@/domain/user/first-name.js";
+import { LastName } from "@/domain/user/last-name.js";
+import { Password } from "@/domain/user/password.js";
 import {
   ErrorResponseSchema,
   SuccessResponseSchema,
@@ -12,32 +12,18 @@ import { transformToValueObject } from "@/presentation/shared/schemas/transform-
 import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-handler.js";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
+import { EmailSchema, NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
 
 const SignUpRequestSchema = z
   .object({
-    firstName: z
-      .string()
-      .trim()
-      .nonempty()
-      .max(FirstName.maxLength)
-      .transform(transformToValueObject(FirstName.create)),
-    lastName: z
-      .string()
-      .trim()
-      .nonempty()
-      .max(LastName.maxLength)
-      .transform(transformToValueObject(LastName.create)),
-    email: z
-      .email()
-      .trim()
-      .nonempty()
-      .max(Email.maxLength)
-      .transform(transformToValueObject(Email.create)),
-    password: z
-      .string()
-      .trim()
-      .nonempty()
-      .min(Password.minLength)
+    firstName: NonEmptyStringSchema.max(FirstName.maxLength).transform(
+      transformToValueObject(FirstName.create),
+    ),
+    lastName: NonEmptyStringSchema.max(LastName.maxLength).transform(
+      transformToValueObject(LastName.create),
+    ),
+    email: EmailSchema.max(Email.maxLength).transform(transformToValueObject(Email.create)),
+    password: NonEmptyStringSchema.min(Password.minLength)
       .max(Password.maxLength)
       .transform(transformToValueObject(Password.create)),
   })

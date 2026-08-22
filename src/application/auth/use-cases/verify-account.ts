@@ -6,8 +6,8 @@ import { invalidTokenError, userNotFoundError } from "@/application/auth/auth-er
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
-import { UserId } from "@/domain/users/user-id.js";
-import { IUserRepository } from "@/domain/users/user-repository.interface.js";
+import { UserId } from "@/domain/user/user-id.js";
+import { IUserRepository } from "@/domain/user/user-repository.interface.js";
 
 export class VerifyAccountCommand implements ICommand<void> {
   constructor(
