@@ -10,7 +10,7 @@ import { GetUsersQuery } from "@/application/admin/users/use-cases/get-users.js"
 import { UserId } from "@/domain/user/user-id.js";
 import { KeysetPagination } from "@/domain/shared/pagination/keyset-pagination.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
-import { CursorSchema } from "@/presentation/shared/schemas/pagination/cursor.schema.js";
+import { CursorPaginationSchema } from "@/presentation/shared/schemas/pagination/cursor.-pagination.schema.js";
 import { UserRole } from "@/domain/user/user-role.js";
 import { CursorPaginatedSchema } from "@/presentation/shared/schemas/pagination/cursor-paginated.schema.js";
 import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
@@ -19,11 +19,32 @@ import {
   IsoStringSchema,
   NonEmptyStringSchema,
 } from "@/presentation/shared/schemas/common.schema.js";
+import { transformToValueObjectOptional } from "@/presentation/shared/schemas/transform-value-object.js";
+import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
+import { UserFilters } from "@/domain/user/user-filters.js";
+import {
+  GET_USERS_DEFAULT_LIMIT,
+  GET_USERS_MAX_LIMIT,
+  GET_USERS_SEARCH_MAX_LENGTH,
+} from "@/application/admin/users/const/admin-users.const.js";
 
-const GetUsersRequestQuerySchema = CursorSchema(
+const GetUsersRequestQuerySchema = CursorPaginationSchema(
   UserId.create,
-  PositiveInt.create(30)._unsafeUnwrap(),
-).strict();
+  PositiveInt.create(GET_USERS_MAX_LIMIT)._unsafeUnwrap(),
+  PositiveInt.create(GET_USERS_DEFAULT_LIMIT)._unsafeUnwrap(),
+).and(
+  z
+    .object({
+      search: NonEmptyStringSchema.max(GET_USERS_SEARCH_MAX_LENGTH)
+        .optional()
+        .transform(
+          transformToValueObjectOptional((val) => NonEmptyString.create(val, "search", "Search")),
+        ),
+      isBanned: z.stringbool().optional(),
+      isVerified: z.stringbool().optional(),
+    })
+    .strict(),
+);
 
 const GetUsersResponseSchema = CursorPaginatedSchema(
   z.object({
@@ -46,12 +67,6 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.get(
     "/admin/users",
     {
-      config: {
-        rateLimit: {
-          max: 200,
-          timeWindow: "1 minute",
-        },
-      },
       preHandler: async (req, reply) => {
         const result = await req.authenticate().andThen(() => req.authorize([UserRole.Admin]));
         if (result.isErr()) {
@@ -59,7 +74,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         }
       },
       schema: {
-        tags: ["Users"],
+        tags: ["Admin/Users"],
         querystring: GetUsersRequestQuerySchema,
         response: {
           200: GetUsersResponseSchema,
@@ -72,13 +87,21 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         return mapAppErrorToHttpError(reply, unauthorized());
       }
 
+      const filters = new UserFilters(
+        req.query.search ?? undefined,
+        req.query.isBanned,
+        req.query.isVerified,
+      );
+
       const pagination = new KeysetPagination<UserId>(
-        PositiveInt.create(2)._unsafeUnwrap(),
+        req.query.limit,
         req.query.prevCursor ?? null,
         req.query.nextCursor ?? null,
       );
 
-      const result = await fastify.useCases.users.getUsers.handle(new GetUsersQuery(pagination));
+      const result = await fastify.useCases.users.getUsers.handle(
+        new GetUsersQuery(filters, pagination),
+      );
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);
       }

@@ -42,18 +42,9 @@ export class SignInCommandHandler implements ICommandHandler<
 
         return this.passwordHasher
           .verify(command.password, user.hashedPassword)
-          .andThen((success) => (!success ? invalidCredentialsError : okAsync(user)))
-          .andThen((user) => {
-            if (user.avatarId === null) {
-              return okAsync({ user, avatarUrl: null });
-            }
-
-            return this.objectStorage
-              .createDownloadUrl(user.avatarId)
-              .map((avatarUrl) => ({ user, avatarUrl }));
-          });
+          .andThen((success) => (!success ? invalidCredentialsError : okAsync(user)));
       })
-      .andThen(({ user, avatarUrl }) => {
+      .andThen((user) => {
         const sessionId = UUID.generate();
 
         const sessionTTLSeconds = PositiveInt.create(
@@ -66,7 +57,7 @@ export class SignInCommandHandler implements ICommandHandler<
           firstName: user.firstName?.value ?? null,
           lastName: user.lastName?.value ?? null,
           role: user.role.value,
-          avatarUrl: avatarUrl?.value ?? null,
+          avatarUrl: user.avatarUrl?.value ?? null,
         };
 
         return this.sessionStore

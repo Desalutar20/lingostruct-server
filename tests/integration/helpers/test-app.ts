@@ -6,6 +6,7 @@ import { Kysely } from "kysely";
 import { setupTestDatabase } from "./test-database.js";
 import { setupTestRedis } from "./test-redis.js";
 import { RedisClientType } from "redis";
+import { UserRole } from "@/domain/user/user-role.js";
 
 export class TestApp {
   constructor(
@@ -54,8 +55,16 @@ export class TestApp {
       password: string;
     },
     signal?: AbortSignal,
+    role?: UserRole,
   ) {
     await this.signUpAndVerify(data, signal);
+    if (role !== undefined) {
+      await this.db
+        .updateTable("users")
+        .set({ role: role.toString() })
+        .where("email", "=", data.email)
+        .execute();
+    }
 
     const response = await this.signIn({ email: data.email, password: data.password }, signal);
     expect(response.status).toBe(200);
@@ -69,6 +78,16 @@ export class TestApp {
       cookies: response.headers.get("Set-Cookie") ?? undefined,
       sessionId: sessionId!,
     };
+  }
+
+  public static applyQueryParams(url: URL, search?: Record<string, unknown>) {
+    if (search === undefined) return;
+
+    for (const key in search) {
+      if (!Object.hasOwn(search, key)) continue;
+
+      url.searchParams.append(key, search[key] as string);
+    }
   }
 
   public static async run(cb: (app: TestApp) => void | Promise<void>) {

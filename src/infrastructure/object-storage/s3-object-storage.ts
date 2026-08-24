@@ -1,7 +1,7 @@
 import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
 import { S3Config } from "@/application/config/s3.config.js";
 import { internal } from "@/domain/abstractions/errors.js";
-import { ResultAsync } from "@/domain/abstractions/result.js";
+import { Result, ResultAsync } from "@/domain/abstractions/result.js";
 import { URL } from "@/domain/shared/value-objects/url.js";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3 } from "@aws-sdk/client-s3";
 import { fromPromise } from "neverthrow";
@@ -12,6 +12,7 @@ import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.j
 export class S3ObjectStorage implements IObjectStorage {
   private readonly client: S3;
   private readonly mainBucket: string;
+  private readonly publicUrl: string;
   private readonly uploadUrlTtl: number;
   private readonly downloadUrlTtl: number;
 
@@ -26,8 +27,13 @@ export class S3ObjectStorage implements IObjectStorage {
       forcePathStyle: true,
     });
     this.mainBucket = config.mainBucket;
+    this.publicUrl = `${config.host}:${config.port}`;
     this.uploadUrlTtl = config.uploadUrlTTLMinutes * 60;
     this.downloadUrlTtl = config.downloadUrlTTLMinutes * 60;
+  }
+
+  getPublicUrl(key: NonEmptyString): Result<URL> {
+    return URL.create(`${this.publicUrl}/${this.mainBucket}/${key.value}`);
   }
 
   public createDownloadUrl(key: NonEmptyString): ResultAsync<URL> {

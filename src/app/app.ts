@@ -27,7 +27,7 @@ export const createApp = async (config: Config) => {
   const sessionStore = new RedisSessionStore(redis.client, config.redis);
   const objectStorage = new S3ObjectStorage(config.s3);
 
-  const domainEventPublisher = setupDomainEventPublisher(sessionStore, objectStorage, logger);
+  const domainEventPublisher = setupDomainEventPublisher(sessionStore, logger);
 
   const useCases = setupUseCases({
     unitOfWork,

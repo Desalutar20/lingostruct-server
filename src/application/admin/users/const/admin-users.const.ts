@@ -1,0 +1,3 @@
+export const GET_USERS_SEARCH_MAX_LENGTH = 200;
+export const GET_USERS_DEFAULT_LIMIT = 50;
+export const GET_USERS_MAX_LIMIT = 100;

@@ -73,15 +73,6 @@ export class OAuthSignInCommandHandler implements ICommandHandler<OAuthSignInCom
             return okAsync(user);
           })
           .andThen((user) => {
-            if (user.avatarId === null) {
-              return okAsync({ user, avatarUrl: null });
-            }
-
-            return this.objectStorage
-              .createDownloadUrl(user.avatarId)
-              .map((avatarUrl) => ({ user, avatarUrl }));
-          })
-          .andThen(({ user, avatarUrl }) => {
             const sessionId = UUID.generate();
 
             const session: Session = {
@@ -90,7 +81,7 @@ export class OAuthSignInCommandHandler implements ICommandHandler<OAuthSignInCom
               firstName: user.firstName?.value ?? null,
               lastName: user.lastName?.value ?? null,
               role: user.role.value,
-              avatarUrl: avatarUrl?.value ?? null,
+              avatarUrl: user.avatarUrl?.value ?? null,
             };
 
             const sessionTTLSeconds = PositiveInt.create(

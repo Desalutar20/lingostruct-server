@@ -12,8 +12,8 @@ import { transformToValueObjectOptional } from "@/presentation/shared/schemas/tr
 import { LastName } from "@/domain/user/last-name.js";
 import { UserId } from "@/domain/user/user-id.js";
 import { UpdateProfileCommand } from "@/application/user/use-cases/update-profile.js";
-import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
+import { URL } from "@/domain/shared/value-objects/url.js";
 
 const UpdateProfileSchema = z
   .object({
@@ -25,20 +25,10 @@ const UpdateProfileSchema = z
       .optional()
       .nullable()
       .transform(transformToValueObjectOptional(LastName.create)),
-    avatarId: NonEmptyStringSchema.max(100)
+    avatarUrl: NonEmptyStringSchema.max(100)
       .optional()
       .nullable()
-      .transform(
-        transformToValueObjectOptional((val) =>
-          NonEmptyString.create(val, "avatarId", "Avatar id", { maxLength: 100 }),
-        ),
-      ),
-  })
-  .strict();
-
-const UpdateProfileResponseSchema = z
-  .object({
-    avatarUrl: z.string().trim().nonempty().nullable(),
+      .transform(transformToValueObjectOptional((val) => URL.create(val, "avatarUrl"))),
   })
   .strict();
 
@@ -62,7 +52,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         tags: ["Users"],
         body: UpdateProfileSchema,
         response: {
-          200: SuccessResponseSchema(UpdateProfileResponseSchema),
+          200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
         },
       },
@@ -77,7 +67,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           UserId.create(req.session.id)._unsafeUnwrap(),
           req.body.firstName ?? null,
           req.body.lastName ?? null,
-          req.body.avatarId ?? null,
+          req.body.avatarUrl ?? null,
         ),
       );
       if (result.isErr()) {
@@ -86,9 +76,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
 
       reply.status(200).send({
         status: "success",
-        data: {
-          avatarUrl: result.value?.value ?? null,
-        },
+        data: "Success",
       });
     },
   );

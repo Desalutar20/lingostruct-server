@@ -4,11 +4,15 @@ import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { KeysetPaginated } from "@/domain/shared/pagination/keyset-paginated.js";
 import { KeysetPagination } from "@/domain/shared/pagination/keyset-pagination.js";
+import { UserFilters } from "@/domain/user/user-filters.js";
 import { UserId } from "@/domain/user/user-id.js";
 import { IUserRepository } from "@/domain/user/user-repository.interface.js";
 
 export class GetUsersQuery implements IQuery<KeysetPaginated<AdminUserDto, UserId>> {
-  constructor(readonly pagination: KeysetPagination<UserId>) {}
+  constructor(
+    readonly filters: UserFilters,
+    readonly pagination: KeysetPagination<UserId>,
+  ) {}
 }
 
 export class GetUsersQueryHandlers implements IQueryHandler<
@@ -18,7 +22,7 @@ export class GetUsersQueryHandlers implements IQueryHandler<
   constructor(private readonly userRepository: IUserRepository) {}
 
   handle(query: GetUsersQuery): ResultAsync<KeysetPaginated<AdminUserDto, UserId>> {
-    return this.userRepository.getAll(query.pagination).map(
+    return this.userRepository.getAll(query.filters, query.pagination).map(
       (data) =>
         new KeysetPaginated(
           data.data.map((user) => new AdminUserDto(user)),

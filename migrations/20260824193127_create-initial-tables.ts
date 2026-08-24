@@ -17,7 +17,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("is_banned", "boolean", (col) => col.notNull().defaultTo(false))
     .addColumn("google_id", "text")
     .addColumn("github_id", "text")
-    .addColumn("avatar_id", "text")
+    .addColumn("avatar_url", "text")
     .addUniqueConstraint("uq_users_email", ["email"])
     .addUniqueConstraint("uq_users_google_id", ["google_id"])
     .addUniqueConstraint("uq_users_github_id", ["github_id"])

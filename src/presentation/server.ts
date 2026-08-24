@@ -22,8 +22,6 @@ import { UpdateProfileCommand } from "@/application/user/use-cases/update-profil
 import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
 import { URL } from "@/domain/shared/value-objects/url.js";
 import { CreatePresignedUrlCommand } from "@/application/object-storage/use-cases/create-presigned-url.js";
-import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
-import { Nullable } from "@/app/types.js";
 import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
 import { IQueryHandler } from "@/application/abstractions/cqrs/query-handler.interface.js";
 import { GetUsersQuery } from "@/application/admin/users/use-cases/get-users.js";
@@ -45,12 +43,12 @@ export type UseCases = {
   };
   users: {
     getUsers: IQueryHandler<GetUsersQuery, KeysetPaginated<AdminUserDto, UserId>>;
-    updateProfile: ICommandHandler<UpdateProfileCommand, Nullable<URL>>;
+    updateProfile: ICommandHandler<UpdateProfileCommand, void>;
   };
   files: {
     createPresignedUrl: ICommandHandler<
       CreatePresignedUrlCommand,
-      { url: URL; key: NonEmptyString }
+      { uploadUrl: URL; publicUrl: URL }
     >;
   };
 };

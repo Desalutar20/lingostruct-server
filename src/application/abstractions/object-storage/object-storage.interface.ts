@@ -6,5 +6,6 @@ import { URL } from "@/domain/shared/value-objects/url.js";
 export interface IObjectStorage {
   createUploadUrl(key: NonEmptyString, contentType: MimeType): ResultAsync<URL>;
   createDownloadUrl(key: NonEmptyString): ResultAsync<URL>;
+  getPublicUrl(key: NonEmptyString): Result<URL>;
   deleteObject(key: NonEmptyString): ResultAsync<void>;
 }

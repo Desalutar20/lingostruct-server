@@ -13,16 +13,16 @@ import { err, ok } from "neverthrow";
 import { failure } from "@/domain/abstractions/errors.js";
 import { OAuthProvider } from "@/domain/user/oauth-provider.js";
 import { UserUpdatedDomainEvent } from "@/domain/user/events/user-updated-domain-event.js";
-import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { nowIso } from "@/app/helpers.js";
+import { URL } from "@/domain/shared/value-objects/url.js";
 
 export class User extends AggregateRoot<UserId> {
   private _role: UserRole;
   private _isBanned: boolean;
   private _isVerified: boolean;
+  private _avatarUrl: Nullable<URL>;
   private _googleId: Nullable<ProviderId>;
   private _githubId: Nullable<ProviderId>;
-  private _avatarId: Nullable<NonEmptyString>;
 
   public constructor(
     private _firstName: Nullable<FirstName>,
@@ -40,7 +40,7 @@ export class User extends AggregateRoot<UserId> {
     this._isVerified = false;
     this._googleId = null;
     this._githubId = null;
-    this._avatarId = null;
+    this._avatarUrl = null;
   }
 
   public get firstName() {
@@ -68,16 +68,16 @@ export class User extends AggregateRoot<UserId> {
     return this._isVerified;
   }
 
+  public get avatarUrl() {
+    return this._avatarUrl;
+  }
+
   public get googleId() {
     return this._googleId;
   }
 
   public get githubId() {
     return this._githubId;
-  }
-
-  public get avatarId() {
-    return this._avatarId;
   }
 
   public verify(): Result<void> {
@@ -123,7 +123,7 @@ export class User extends AggregateRoot<UserId> {
   public update(
     firstName?: Nullable<FirstName>,
     lastName?: Nullable<LastName>,
-    avatarId?: Nullable<NonEmptyString>,
+    avatarUrl?: Nullable<URL>,
   ): boolean {
     let isUpdated = false;
 
@@ -151,14 +151,14 @@ export class User extends AggregateRoot<UserId> {
       }
     }
 
-    if (avatarId !== undefined) {
+    if (avatarUrl !== undefined) {
       const changed =
-        avatarId === null
-          ? this.avatarId !== null
-          : this.avatarId === null || !avatarId.equals(this.avatarId);
+        avatarUrl === null
+          ? this.avatarUrl !== null
+          : this.avatarUrl === null || !avatarUrl.equals(this.avatarUrl);
 
       if (changed) {
-        this._avatarId = avatarId;
+        this._avatarUrl = avatarUrl;
         isUpdated = true;
       }
     }
@@ -186,9 +186,9 @@ export class User extends AggregateRoot<UserId> {
     role: UserRole,
     isBanned: boolean,
     isVerified: boolean,
+    avatarUrl: Nullable<URL>,
     googleId: Nullable<ProviderId>,
     githubId: Nullable<ProviderId>,
-    avatarId: Nullable<NonEmptyString>,
   ): User {
     const user = new User(firstName, lastName, email, hashedPassword);
 
@@ -200,7 +200,7 @@ export class User extends AggregateRoot<UserId> {
     user._isVerified = isVerified;
     user._googleId = googleId;
     user._githubId = githubId;
-    user._avatarId = avatarId;
+    user._avatarUrl = avatarUrl;
 
     return user;
   }

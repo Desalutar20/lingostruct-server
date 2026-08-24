@@ -19,8 +19,8 @@ const CreatePresignedUrlQuerySchema = z
 
 const CreatePresignedUrlResponseSchema = z
   .object({
-    url: z.url().trim().nonempty(),
-    key: z.string().trim().nonempty(),
+    uploadUrl: z.url().trim().nonempty(),
+    publicUrl: z.url().trim().nonempty(),
   })
   .strict();
 
@@ -65,8 +65,8 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       reply.status(200).send({
         status: "success",
         data: {
-          url: result.value.url.value,
-          key: result.value.key.value,
+          uploadUrl: result.value.uploadUrl.value,
+          publicUrl: result.value.publicUrl.value,
         },
       });
     },

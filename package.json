@@ -16,6 +16,9 @@
     "migration:list": " npx kysely migrate:list",
     "migration:up": "npx kysely migprate:up",
     "migration:down": "npx kysely migrate:down",
+    "seed:create": "npx kysely seed:make",
+    "seed:run": "npx kysely seed:run",
+    "seed:list": "npx kysely seed:list",
     "kysely:codegen": "kysely-codegen --out-file ./src/infrastructure/data/db.types.ts --camel-case --dialect=postgres --runtime-enums=pascal-case --date-parser=string"
   },
   "dependencies": {

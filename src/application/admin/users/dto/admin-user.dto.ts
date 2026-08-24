@@ -11,9 +11,9 @@ export class AdminUserDto {
   public readonly role: string;
   public readonly isBanned: boolean;
   public readonly isVerified: boolean;
+  public readonly avatarUrl: Nullable<string>;
   public readonly googleId: Nullable<string>;
   public readonly githubId: Nullable<string>;
-  public readonly avatarId: Nullable<string>;
 
   constructor(user: User) {
     this.id = user.id.value;
@@ -25,8 +25,8 @@ export class AdminUserDto {
     this.role = user.role.value;
     this.isBanned = user.isBanned;
     this.isVerified = user.isVerified;
+    this.avatarUrl = user.avatarUrl?.value ?? null;
     this.googleId = user.googleId?.value ?? null;
     this.githubId = user.githubId?.value ?? null;
-    this.avatarId = user.avatarId?.value ?? null;
   }
 }

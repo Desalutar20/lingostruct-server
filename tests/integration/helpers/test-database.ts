@@ -1,11 +1,11 @@
 import { DatabaseConfig } from "@/application/config/database.config.js";
 import { DB } from "@/infrastructure/data/db.types.js";
 import { CamelCasePlugin, Kysely, PostgresDialect, SafeNullComparisonPlugin } from "kysely";
-import cp from "node:child_process";
+import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { Client, Pool } from "pg";
 
-const exec = promisify(cp.exec);
+const execAsync = promisify(exec);
 
 export const setupTestDatabase = async (config: DatabaseConfig) => {
   const client = new Client({
@@ -20,11 +20,19 @@ export const setupTestDatabase = async (config: DatabaseConfig) => {
 
   const isWindows = process.platform === `win32`;
   const npm = isWindows ? `npm.cmd` : `npm`;
+  const dbUrl = `postgresql://${config.user}:${config.password}@${config.host}:${config.port}/${config.database}`;
 
-  await exec(`${npm} run migration:run -s`, {
+  await execAsync(`${npm} run migration:run -s`, {
     env: {
       ...process.env,
-      DATABASE_URL: `postgresql://${config.user}:${config.password}@${config.host}:${config.port}/${config.database}`,
+      DATABASE_URL: dbUrl,
+    },
+  });
+
+  await execAsync(`${npm} run seed:run -s`, {
+    env: {
+      ...process.env,
+      DATABASE_URL: dbUrl,
     },
   });
 

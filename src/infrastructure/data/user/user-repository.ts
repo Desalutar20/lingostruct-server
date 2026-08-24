@@ -1,4 +1,4 @@
-import { Kysely, Selectable } from "kysely";
+import { Expression, Kysely, Selectable, SqlBool } from "kysely";
 import { Email } from "@/domain/shared/value-objects/email.js";
 import { UserId } from "@/domain/user/user-id.js";
 import { IUserRepository } from "@/domain/user/user-repository.interface.js";
@@ -12,18 +12,46 @@ import { ProviderId } from "@/domain/user/provider-id.js";
 import { mapDbErrorToAppError } from "../database-errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { fromPromise } from "neverthrow";
-import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
 import { KeysetPagination } from "@/domain/shared/pagination/keyset-pagination.js";
 import { KeysetPaginated } from "@/domain/shared/pagination/keyset-paginated.js";
 import { applyCursorPagination } from "@/infrastructure/data/helpers/apply-cursor-pagination.js";
+import { UserFilters } from "@/domain/user/user-filters.js";
+import { URL } from "@/domain/shared/value-objects/url.js";
 
 export class UserRepository implements IUserRepository {
   constructor(private readonly db: Kysely<DB>) {}
 
-  getAll(pagination: KeysetPagination<UserId>): ResultAsync<KeysetPaginated<User, UserId>> {
+  getAll(
+    filters: UserFilters,
+    pagination: KeysetPagination<UserId>,
+  ): ResultAsync<KeysetPaginated<User, UserId>> {
     return fromPromise(
       (async () => {
         let query = this.db.selectFrom("users").selectAll();
+
+        query = query.where((eb) => {
+          const ands: Expression<SqlBool>[] = [];
+
+          if (filters.search !== undefined) {
+            ands.push(
+              eb.or([
+                eb("email", "=", filters.search.value),
+                eb("firstName", "ilike", `%${filters.search.value}%`),
+                eb("lastName", "ilike", `%${filters.search.value}%`),
+              ]),
+            );
+          }
+
+          if (filters.isBanned !== undefined) {
+            ands.push(eb("isBanned", "=", filters.isBanned));
+          }
+
+          if (filters.isVerified !== undefined) {
+            ands.push(eb("isVerified", "=", filters.isVerified));
+          }
+
+          return eb.and(ands);
+        });
 
         query = applyCursorPagination(pagination, query);
 
@@ -82,7 +110,7 @@ export class UserRepository implements IUserRepository {
           isVerified: user.isVerified,
           googleId: user.googleId?.value,
           githubId: user.githubId?.value,
-          avatarId: user.avatarId?.value,
+          avatarUrl: user.avatarUrl?.value,
         })
         .execute(),
       (err) => mapDbErrorToAppError(err, "UserRepository.create"),
@@ -104,7 +132,7 @@ export class UserRepository implements IUserRepository {
           isVerified: user.isVerified,
           googleId: user.googleId?.value,
           githubId: user.githubId?.value,
-          avatarId: user.avatarId?.value ?? null,
+          avatarUrl: user.avatarUrl?.value ?? null,
         })
         .where("id", "=", user.id.value)
         .execute(),
@@ -124,9 +152,9 @@ export class UserRepository implements IUserRepository {
       UserRole.create(row.role)._unsafeUnwrap(),
       row.isBanned,
       row.isVerified,
+      row.avatarUrl ? URL.create(row.avatarUrl)._unsafeUnwrap() : null,
       row.googleId ? ProviderId.create(row.googleId)._unsafeUnwrap() : null,
       row.githubId ? ProviderId.create(row.githubId)._unsafeUnwrap() : null,
-      row.avatarId ? NonEmptyString.create(row.avatarId)._unsafeUnwrap() : null,
     );
   }
 }
