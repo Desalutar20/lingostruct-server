@@ -13,7 +13,7 @@ import { NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schem
 
 const GenerateOAuthUrlRequestQuerySchema = z
   .object({
-    redirectPath: NonEmptyStringSchema.transform(
+    redirectPath: NonEmptyStringSchema.optional().transform(
       transformToValueObjectOptional(NonEmptyString.create),
     ),
   })

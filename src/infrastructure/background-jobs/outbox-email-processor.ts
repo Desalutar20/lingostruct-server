@@ -48,8 +48,12 @@ export class OutboxEmailProcessor extends CronProcessor {
             .andThen(commit),
         )
         .orElse((error) => {
-          if (error instanceof Error) {
-            this.logger.error(error);
+          if (Array.isArray(error)) {
+            for (const err of error) {
+              this.logger.error("message" in err ? err.message : `${err.type}- ${err.code}`);
+            }
+          } else {
+            this.logger.error("message" in error ? error.message : `${error.type}- ${error.code}`);
           }
 
           return rollback();

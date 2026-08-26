@@ -7,6 +7,13 @@ declare module "../../test-app.js" {
       cookies?: string,
       signal?: AbortSignal,
     ): Promise<Response>;
+
+    setUserBannedStatus(
+      userId: string,
+      body: Record<string, unknown>,
+      cookies?: string,
+      signal?: AbortSignal,
+    ): Promise<Response>;
   }
 }
 
@@ -21,6 +28,23 @@ TestApp.prototype.getUsers = async function (
   return await fetch(url, {
     method: "GET",
     headers: cookies ? { Cookie: cookies } : {},
+    signal,
+  });
+};
+
+TestApp.prototype.setUserBannedStatus = async function (
+  userId: string,
+  body: Record<string, unknown>,
+  cookies?: string,
+  signal?: AbortSignal,
+) {
+  return await fetch(`${this.url}/admin/users/${userId}/ban`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(cookies ? { Cookie: cookies } : {}),
+    },
+    body: JSON.stringify(body),
     signal,
   });
 };

@@ -32,7 +32,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("type", "text", (col) => col.notNull())
     .addColumn("data", "jsonb", (col) => col.notNull())
     .addColumn("processed_at", "timestamptz")
-    .addCheckConstraint("ck_outbox_type", sql`type in ('email')`)
+    .addCheckConstraint("ck_outbox_type", sql`type in ('email', 'userBanStatusChanged')`)
     .execute();
 
   await db.schema

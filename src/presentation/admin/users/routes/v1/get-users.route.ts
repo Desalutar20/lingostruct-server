@@ -10,7 +10,7 @@ import { GetUsersQuery } from "@/application/admin/users/use-cases/get-users.js"
 import { UserId } from "@/domain/user/user-id.js";
 import { KeysetPagination } from "@/domain/shared/pagination/keyset-pagination.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
-import { CursorPaginationSchema } from "@/presentation/shared/schemas/pagination/cursor.-pagination.schema.js";
+import { CursorPaginationSchema } from "@/presentation/shared/schemas/pagination/cursor-pagination.schema.js";
 import { UserRole } from "@/domain/user/user-role.js";
 import { CursorPaginatedSchema } from "@/presentation/shared/schemas/pagination/cursor-paginated.schema.js";
 import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
@@ -59,7 +59,7 @@ const GetUsersResponseSchema = CursorPaginatedSchema(
     isVerified: z.boolean(),
     googleId: NonEmptyStringSchema.nullable(),
     githubId: NonEmptyStringSchema.nullable(),
-    avatarId: NonEmptyStringSchema.nullable(),
+    avatarUrl: NonEmptyStringSchema.nullable(),
   }) satisfies z.ZodType<AdminUserDto>,
 );
 
@@ -83,7 +83,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       },
     },
     async (req, reply) => {
-      if (!req.session) {
+      if (!req.session || req.session.role !== "admin") {
         return mapAppErrorToHttpError(reply, unauthorized());
       }
 

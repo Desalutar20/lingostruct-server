@@ -5,6 +5,7 @@ import { err, ok } from "neverthrow";
 
 export class OutboxType extends NonEmptyString {
   public static readonly Email = new OutboxType("email");
+  public static readonly UserBanStatusChanged = new OutboxType("userBanStatusChanged");
 
   private constructor(value: string) {
     super(value);
@@ -14,6 +15,9 @@ export class OutboxType extends NonEmptyString {
     switch (value) {
       case "email":
         return ok(OutboxType.Email);
+
+      case "userBanStatusChanged":
+        return ok(OutboxType.UserBanStatusChanged);
 
       default:
         return err(internal(`Invalid outbox type: ${value}`));

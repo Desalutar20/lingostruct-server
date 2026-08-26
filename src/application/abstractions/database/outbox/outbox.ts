@@ -2,17 +2,17 @@ import { Entity } from "@/domain/abstractions/entity.js";
 import { UUID } from "@/domain/shared/value-objects/uuid.js";
 import { OutboxType } from "./outbox-type.js";
 import { Nullable } from "@/app/types.js";
+import { nowIso } from "@/app/helpers.js";
 
 export class Outbox<T> extends Entity {
-  private constructor(
-    id: UUID,
-    createdAt: Date,
-    updatedAt: Date,
+  private _processedAt: Nullable<string> = null;
+
+  public constructor(
     private readonly _type: OutboxType,
     private readonly _data: T,
-    private readonly _processedAt: Nullable<Date>,
   ) {
-    super(id, createdAt, updatedAt);
+    const now = nowIso();
+    super(UUID.generate(), now, now);
   }
 
   public get type() {
@@ -27,18 +27,19 @@ export class Outbox<T> extends Entity {
     return this._processedAt;
   }
 
-  public static create<T>(type: OutboxType, data: T) {
-    return new Outbox(UUID.generate(), new Date(), new Date(), type, data, null);
-  }
-
   public static restore<T>(
     id: UUID,
-    createdAt: Date,
-    updatedAt: Date,
+    createdAt: string,
+    updatedAt: string,
     type: OutboxType,
     data: T,
-    processedAt: Nullable<Date>,
+    processedAt: Nullable<string>,
   ) {
-    return new Outbox(id, createdAt, updatedAt, type, data, processedAt);
+    const outbox = new Outbox(type, data);
+
+    outbox._id = id;
+    outbox._createdAt = createdAt;
+    outbox._updatedAt = updatedAt;
+    outbox._processedAt = processedAt;
   }
 }

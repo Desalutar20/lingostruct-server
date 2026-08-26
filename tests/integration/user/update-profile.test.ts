@@ -91,25 +91,25 @@ describe("Users", () => {
             "lastName",
           ],
           [
-            "Empty avatar id",
+            "Empty avatar url",
             {
-              avatarId: "",
+              avatarUrl: "",
             },
-            "avatarId",
+            "avatarUrl",
           ],
           [
-            "Whitespace avatar id",
+            "Whitespace avatar url",
             {
-              avatarId: "   ",
+              avatarUrl: "   ",
             },
-            "avatarId",
+            "avatarUrl",
           ],
           [
-            "Invalid avatar id",
+            "Invalid avatar url",
             {
-              avatarId: "not valid id",
+              avatarId: "not valid url",
             },
-            "avatarId",
+            "avatarUrl",
           ],
         ] as const;
 

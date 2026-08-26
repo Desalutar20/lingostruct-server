@@ -46,7 +46,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
     ).map(() => undefined);
   }
 
-  update(workspace: Workspace): ResultAsync<void> {
+  update(workspace: Workspace): ResultAsync<bigint> {
     return fromPromise(
       this.db
         .updateTable("workspace")
@@ -60,9 +60,9 @@ export class WorkspaceRepository implements IWorkspaceRepository {
           postalCode: workspace.address.postalCode,
         })
         .where("id", "=", workspace.id.value)
-        .execute(),
+        .executeTakeFirst(),
       (err) => mapDbErrorToAppError(err, "WorkspaceRepository.update"),
-    ).map(() => undefined);
+    ).map((result) => result.numUpdatedRows);
   }
 
   private static toEntity(row: Selectable<DbWorkspace>): Workspace {

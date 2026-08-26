@@ -8,9 +8,10 @@ import {
   GET_USERS_MAX_LIMIT,
   GET_USERS_SEARCH_MAX_LENGTH,
 } from "@/application/admin/users/const/admin-users.const.js";
+import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
 
 describe("Admin/Users", () => {
-  describe("Get Users", () => {
+  describe("Set user banned status", () => {
     const validData = {
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
@@ -22,32 +23,29 @@ describe("Admin/Users", () => {
       await TestApp.run(async (app) => {
         const { cookies } = await app.signUpAndSignIn(validData, signal, UserRole.Admin);
 
-        const response = await app.getUsers({}, cookies, signal);
+        const getUsersResponse = await app.getUsers({ isBanned: false }, cookies, signal);
+        expect(getUsersResponse.status).toBe(200);
+
+        const data = (await getUsersResponse.json()) as { data: AdminUserDto[] };
+        const user = data.data[0];
+
+        expect(user).toBeDefined();
+
+        const response = await app.setUserBannedStatus(
+          user.id,
+          {
+            isBanned: true,
+          },
+          cookies,
+          signal,
+        );
         expect(response.status).toBe(200);
 
-        const data = await response.json();
+        const userFromDb = await app.getUserFromDbByEmail(user.email);
 
-        expect(data).toMatchObject({
-          status: "success",
-          data: expect.arrayContaining([
-            {
-              id: expect.any(String),
-              createdAt: expect.any(String),
-              updatedAt: expect.any(String),
-              email: expect.any(String),
-              firstName: expect.any(String),
-              lastName: expect.any(String),
-              role: expect.any(String),
-              isBanned: expect.any(Boolean),
-              isVerified: expect.any(Boolean),
-              googleId: null,
-              githubId: null,
-              avatarUrl: null,
-            },
-          ]),
-          prevCursor: null,
-          nextCursor: null,
-        });
+        expect(userFromDb).toBeDefined();
+        expect(userFromDb!.isBanned).toBeTruthy();
+        expect(user.isBanned).not.toBe(userFromDb!.isBanned);
       });
     });
 

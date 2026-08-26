@@ -101,23 +101,23 @@ export class UserRepository implements IUserRepository {
           id: user.id.value,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
-          firstName: user.firstName?.value,
-          lastName: user.lastName?.value,
+          firstName: user.firstName?.value ?? null,
+          lastName: user.lastName?.value ?? null,
           email: user.email.value,
-          hashedPassword: user.hashedPassword?.value,
+          hashedPassword: user.hashedPassword?.value ?? null,
           role: user.role.value,
           isBanned: user.isBanned,
           isVerified: user.isVerified,
-          googleId: user.googleId?.value,
-          githubId: user.githubId?.value,
-          avatarUrl: user.avatarUrl?.value,
+          googleId: user.googleId?.value ?? null,
+          githubId: user.githubId?.value ?? null,
+          avatarUrl: user.avatarUrl?.value ?? null,
         })
         .execute(),
       (err) => mapDbErrorToAppError(err, "UserRepository.create"),
     ).map(() => undefined);
   }
 
-  update(user: User): ResultAsync<void> {
+  update(user: User): ResultAsync<bigint> {
     return fromPromise(
       this.db
         .updateTable("users")
@@ -126,18 +126,18 @@ export class UserRepository implements IUserRepository {
           firstName: user.firstName?.value ?? null,
           lastName: user.lastName?.value ?? null,
           email: user.email.value,
-          hashedPassword: user.hashedPassword?.value,
+          hashedPassword: user.hashedPassword?.value ?? null,
           role: user.role.value,
           isBanned: user.isBanned,
           isVerified: user.isVerified,
-          googleId: user.googleId?.value,
-          githubId: user.githubId?.value,
+          googleId: user.googleId?.value ?? null,
+          githubId: user.githubId?.value ?? null,
           avatarUrl: user.avatarUrl?.value ?? null,
         })
         .where("id", "=", user.id.value)
-        .execute(),
+        .executeTakeFirst(),
       (err) => mapDbErrorToAppError(err, "UserRepository.update"),
-    ).map(() => undefined);
+    ).map((val) => val.numUpdatedRows);
   }
 
   private static toEntity(row: Selectable<Users>): User {

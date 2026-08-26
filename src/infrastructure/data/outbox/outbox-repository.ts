@@ -45,11 +45,11 @@ export class OutboxRepository implements IOutboxRepository {
       rows.map((row) =>
         Outbox.restore(
           UUID.create(row.id)._unsafeUnwrap(),
-          row.createdAt,
-          row.updatedAt,
+          row.createdAt.toISOString(),
+          row.updatedAt.toISOString(),
           OutboxType.create(row.type)._unsafeUnwrap(),
           row.data as T,
-          row.processedAt,
+          row.processedAt?.toISOString() ?? null,
         ),
       ),
     );

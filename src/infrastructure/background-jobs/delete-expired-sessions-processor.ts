@@ -1,18 +1,17 @@
-import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
+import { ISessionStore } from "@/application/abstractions/auth/session-store.interface.js";
 import { ILogger } from "@/application/abstractions/logger/logger.interface.js";
-import { DeleteExpiredSessionsCommand } from "@/application/auth/use-cases/delete-expired-sessions.js";
 import { CronProcessor } from "@/infrastructure/background-jobs/cron-processor.js";
 
 export class DeleteExpiredSessionsProcessor extends CronProcessor {
   constructor(
+    private readonly sessionStore: ISessionStore,
     private readonly logger: ILogger,
-    private readonly useCase: ICommandHandler<DeleteExpiredSessionsCommand, void>,
   ) {
     super("0 * * * *");
   }
 
   protected async execute(): Promise<void> {
-    await this.useCase.handle(new DeleteExpiredSessionsCommand()).orTee((error) => {
+    await this.sessionStore.deleteExpired().orTee((error) => {
       this.logger.error(
         "[DeleteExpiredSessionsProcessor] Failed to delete expired sessions",
         error,

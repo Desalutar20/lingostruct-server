@@ -22,6 +22,7 @@ import { IDomainEventPublisher } from "@/application/abstractions/domain-events/
 import { CreatePresignedUrlCommandHandler } from "@/application/object-storage/use-cases/create-presigned-url.js";
 import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
 import { GetUsersQueryHandlers } from "@/application/admin/users/use-cases/get-users.js";
+import { SetUserBannedStatusCommandHandler } from "@/application/admin/users/use-cases/set-user-banned-status.js";
 
 export const setupUseCases = ({
   unitOfWork,
@@ -97,6 +98,7 @@ export const setupUseCases = ({
         domainEventPublisher,
         objectStorage,
       ),
+      setUserBannedStatus: new SetUserBannedStatusCommandHandler(unitOfWork),
     },
     files: {
       createPresignedUrl: new CreatePresignedUrlCommandHandler(objectStorage),

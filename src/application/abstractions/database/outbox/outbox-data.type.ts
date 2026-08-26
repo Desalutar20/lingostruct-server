@@ -9,3 +9,7 @@ export type OutboxEmailData =
       email: string;
       token: string;
     };
+
+export type OutboxUserBannedData = {
+  userId: string;
+};

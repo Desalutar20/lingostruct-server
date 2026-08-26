@@ -5,7 +5,6 @@ import { BackgroundJobs } from "@/infrastructure/background-jobs/index.js";
 import { Redis } from "@/infrastructure/cache/redis.js";
 import { PinoLogger } from "@/infrastructure/logger/pino-logger.js";
 import { RedisSessionStore } from "@/infrastructure/cache/redis-session-store.js";
-import { DeleteExpiredSessionsCommandHandler } from "@/application/auth/use-cases/delete-expired-sessions.js";
 import { setupRepositories } from "@/app/setup-repositories.js";
 import { setupServices } from "@/app/setup-services.js";
 import { setupDomainEventPublisher } from "@/app/setup-domain-event-publisher.js";
@@ -46,9 +45,9 @@ export const createApp = async (config: Config) => {
   const backgroundJobs = new BackgroundJobs(
     unitOfWork,
     emailSender,
-    logger,
     emailTemplateRenderer,
-    new DeleteExpiredSessionsCommandHandler(sessionStore),
+    sessionStore,
+    logger,
   );
 
   const server = await createServer(config, useCases, {

@@ -82,7 +82,7 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand, void
                   email: user.email.value,
                   token,
                 };
-                const outbox = Outbox.create(OutboxType.Email, outboxEmailData);
+                const outbox = new Outbox(OutboxType.Email, outboxEmailData);
 
                 return userRepository
                   .create(user)

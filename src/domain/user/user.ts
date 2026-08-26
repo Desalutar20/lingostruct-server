@@ -124,14 +124,15 @@ export class User extends AggregateRoot<UserId> {
     firstName?: Nullable<FirstName>,
     lastName?: Nullable<LastName>,
     avatarUrl?: Nullable<URL>,
+    isBanned?: boolean,
   ): boolean {
     let isUpdated = false;
 
     if (firstName !== undefined) {
       const changed =
         firstName === null
-          ? this.firstName !== null
-          : this.firstName === null || !firstName.equals(this.firstName);
+          ? this._firstName !== null
+          : this._firstName === null || !firstName.equals(this._firstName);
 
       if (changed) {
         this._firstName = firstName;
@@ -142,8 +143,8 @@ export class User extends AggregateRoot<UserId> {
     if (lastName !== undefined) {
       const changed =
         lastName === null
-          ? this.lastName !== null
-          : this.lastName === null || !lastName.equals(this.lastName);
+          ? this._lastName !== null
+          : this._lastName === null || !lastName.equals(this._lastName);
 
       if (changed) {
         this._lastName = lastName;
@@ -154,8 +155,8 @@ export class User extends AggregateRoot<UserId> {
     if (avatarUrl !== undefined) {
       const changed =
         avatarUrl === null
-          ? this.avatarUrl !== null
-          : this.avatarUrl === null || !avatarUrl.equals(this.avatarUrl);
+          ? this._avatarUrl !== null
+          : this._avatarUrl === null || !avatarUrl.equals(this._avatarUrl);
 
       if (changed) {
         this._avatarUrl = avatarUrl;
@@ -163,12 +164,33 @@ export class User extends AggregateRoot<UserId> {
       }
     }
 
+    if (isBanned !== undefined && this._isBanned !== isBanned) {
+      this._isBanned = isBanned;
+      isUpdated = true;
+    }
+
     if (isUpdated) {
       this._updatedAt = nowIso();
-      this.addDomainEvent(new UserUpdatedDomainEvent(this));
+      this.addDomainEvent(
+        new UserUpdatedDomainEvent({
+          id: this._id,
+          email: this._email,
+          firstName: this._firstName,
+          lastName: this._lastName,
+          role: this._role,
+          avatarUrl: this._avatarUrl,
+        }),
+      );
     }
 
     return isUpdated;
+  }
+
+  public setBanStatus(isBanned: boolean) {
+    if (this._isBanned !== isBanned) {
+      this._isBanned = isBanned;
+      this._updatedAt = nowIso();
+    }
   }
 
   public get isValid(): boolean {
