@@ -23,6 +23,7 @@ import { CreatePresignedUrlCommandHandler } from "@/application/object-storage/u
 import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
 import { GetUsersQueryHandlers } from "@/application/admin/users/use-cases/get-users.js";
 import { SetUserBannedStatusCommandHandler } from "@/application/admin/users/use-cases/set-user-banned-status.js";
+import { DeleteUserCommandHandler } from "@/application/admin/users/use-cases/delete-user.js";
 
 export const setupUseCases = ({
   unitOfWork,
@@ -99,6 +100,7 @@ export const setupUseCases = ({
         objectStorage,
       ),
       setUserBannedStatus: new SetUserBannedStatusCommandHandler(unitOfWork),
+      deleteUser: new DeleteUserCommandHandler(unitOfWork),
     },
     files: {
       createPresignedUrl: new CreatePresignedUrlCommandHandler(objectStorage),

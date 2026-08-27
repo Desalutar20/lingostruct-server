@@ -10,23 +10,17 @@ import { unauthorized } from "@/domain/abstractions/errors.js";
 import { UserId } from "@/domain/user/user-id.js";
 import { UserRole } from "@/domain/user/user-role.js";
 import { transformToValueObject } from "@/presentation/shared/schemas/transform-value-object.js";
-import { SetUserBannedStatusCommand } from "@/application/admin/users/use-cases/set-user-banned-status.js";
+import { DeleteUserCommand } from "@/application/admin/users/use-cases/delete-user.js";
 
-const SetUserBannedStatusRequestParamSchema = z
+const DeleteUserParamSchema = z
   .object({
     userId: z.uuid().trim().nonempty().transform(transformToValueObject(UserId.create)),
   })
   .strict();
 
-const SetUserBannedStatusRequestSchema = z
-  .object({
-    isBanned: z.boolean(),
-  })
-  .strict();
-
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
-  fastify.patch(
-    "/admin/users/:userId/ban",
+  fastify.delete(
+    "/admin/users/:userId",
     {
       preHandler: async (req, reply) => {
         const result = await req.authenticate().andThen(() => req.authorize([UserRole.Admin]));
@@ -36,8 +30,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       },
       schema: {
         tags: ["Admin/Users"],
-        body: SetUserBannedStatusRequestSchema,
-        params: SetUserBannedStatusRequestParamSchema,
+        params: DeleteUserParamSchema,
         response: {
           200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
@@ -49,8 +42,8 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         return mapAppErrorToHttpError(reply, unauthorized());
       }
 
-      const result = await fastify.useCases.users.setUserBannedStatus.handle(
-        new SetUserBannedStatusCommand(req.params.userId, req.body.isBanned),
+      const result = await fastify.useCases.users.deleteUser.handle(
+        new DeleteUserCommand(req.params.userId),
       );
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);

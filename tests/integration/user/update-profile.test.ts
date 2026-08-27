@@ -107,13 +107,13 @@ describe("Users", () => {
           [
             "Invalid avatar url",
             {
-              avatarId: "not valid url",
+              avatarUrl: "not valid url",
             },
             "avatarUrl",
           ],
         ] as const;
 
-        await Promise.allSettled(
+        const results = await Promise.allSettled(
           invalidData.map(async ([description, body, field]) => {
             const response = await app.updateProfile(body, cookies, signal);
             expect(response.status, description).toBe(400);
@@ -127,6 +127,14 @@ describe("Users", () => {
             });
           }),
         );
+
+        const errors = results
+          .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+          .map((result) => result.reason);
+
+        if (errors.length > 0) {
+          throw new AggregateError(errors, "Some test cases failed");
+        }
       });
     });
 

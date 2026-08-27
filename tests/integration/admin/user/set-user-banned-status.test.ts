@@ -4,10 +4,6 @@ import { faker } from "@faker-js/faker";
 import { Password } from "@/domain/user/password.js";
 import "../../helpers/requests/index.js";
 import { UserRole } from "@/domain/user/user-role.js";
-import {
-  GET_USERS_MAX_LIMIT,
-  GET_USERS_SEARCH_MAX_LENGTH,
-} from "@/application/admin/users/const/admin-users.const.js";
 import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
 
 describe("Admin/Users", () => {
@@ -52,103 +48,20 @@ describe("Admin/Users", () => {
     it("Should return 400 status code when data is invalid", async ({ signal }) => {
       await TestApp.run(async (app) => {
         const invalidData = [
-          [
-            "Empty search",
-            {
-              search: "",
-            },
-            "search",
-          ],
-          [
-            "Whitespace search",
-            {
-              search: "   ",
-            },
-            "search",
-          ],
-          [
-            `Search is longer than ${GET_USERS_SEARCH_MAX_LENGTH}`,
-            {
-              search: "t".repeat(GET_USERS_SEARCH_MAX_LENGTH + 1),
-            },
-            "search",
-          ],
+          ["Invalid id", { userId: "not uuid", isBanned: true }, "userId"],
           [
             "Invalid isBanned value",
             {
+              userId: crypto.randomUUID(),
               isBanned: "not bool",
             },
             "isBanned",
           ],
-          [
-            "Invalid isVerified value",
-            {
-              isVerified: "not bool",
-            },
-            "isVerified",
-          ],
-          [
-            "Limit is negative",
-            {
-              limit: -1,
-            },
-            "limit",
-          ],
-          [
-            "Limit is zero",
-            {
-              limit: 0,
-            },
-            "limit",
-          ],
-          [
-            `Limit is greater than ${GET_USERS_MAX_LIMIT}`,
-            {
-              limit: GET_USERS_MAX_LIMIT + 1,
-            },
-            "limit",
-          ],
-          [
-            "Empty prev cursor",
-            {
-              prevCursor: "",
-            },
-            "prevCursor",
-          ],
-          [
-            "Whitespace prev cursor",
-            {
-              prevCursor: "   ",
-            },
-            "prevCursor",
-          ],
-          [
-            "Empty next cursor",
-            {
-              nextCursor: "",
-            },
-            "nextCursor",
-          ],
-          [
-            "Whitespace next cursor",
-            {
-              nextCursor: "   ",
-            },
-            "nextCursor",
-          ],
-          [
-            "Both cursors are provided",
-            {
-              prevCursor: "prev",
-              nextCursor: "next",
-            },
-            "cursor",
-          ],
         ] as const;
 
-        await Promise.allSettled(
-          invalidData.map(async ([description, body, field]) => {
-            const response = await app.getUsers(body, undefined, signal);
+        const results = await Promise.allSettled(
+          invalidData.map(async ([description, { userId, ...body }, field]) => {
+            const response = await app.setUserBannedStatus(userId, body, undefined, signal);
             expect(response.status, description).toBe(400);
 
             const data = await response.json();
@@ -160,12 +73,25 @@ describe("Admin/Users", () => {
             });
           }),
         );
+
+        const errors = results
+          .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+          .map((result) => result.reason);
+
+        if (errors.length > 0) {
+          throw new AggregateError(errors, "Some test cases failed");
+        }
       });
     });
 
     it("Should return 401 status code when user is not logged in", async ({ signal }) => {
       await TestApp.run(async (app) => {
-        const response = await app.getUsers(undefined, undefined, signal);
+        const response = await app.setUserBannedStatus(
+          crypto.randomUUID(),
+          { isBanned: true },
+          undefined,
+          signal,
+        );
         expect(response.status).toBe(401);
       });
     });
@@ -174,7 +100,12 @@ describe("Admin/Users", () => {
       await TestApp.run(async (app) => {
         const { cookies } = await app.signUpAndSignIn(validData, signal);
 
-        const response = await app.getUsers(undefined, cookies, signal);
+        const response = await app.setUserBannedStatus(
+          crypto.randomUUID(),
+          { isBanned: true },
+          cookies,
+          signal,
+        );
         expect(response.status).toBe(403);
       });
     });

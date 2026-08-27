@@ -47,7 +47,7 @@ export class ForgotPasswordCommandHandler implements ICommandHandler<ForgotPassw
           token,
         };
 
-        const outbox = Outbox.create(OutboxType.Email, outboxEmailData);
+        const outbox = new Outbox(OutboxType.Email, outboxEmailData);
 
         return this.outboxRepository.create(outbox);
       });

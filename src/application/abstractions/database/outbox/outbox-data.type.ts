@@ -13,3 +13,7 @@ export type OutboxEmailData =
 export type OutboxUserBannedData = {
   userId: string;
 };
+
+export type OutboxUserDeletedData = {
+  userId: string;
+};

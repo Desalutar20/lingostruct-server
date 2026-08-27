@@ -14,6 +14,8 @@ declare module "../../test-app.js" {
       cookies?: string,
       signal?: AbortSignal,
     ): Promise<Response>;
+
+    deleteUser(userId: string, cookies?: string, signal?: AbortSignal): Promise<Response>;
   }
 }
 
@@ -45,6 +47,18 @@ TestApp.prototype.setUserBannedStatus = async function (
       ...(cookies ? { Cookie: cookies } : {}),
     },
     body: JSON.stringify(body),
+    signal,
+  });
+};
+
+TestApp.prototype.deleteUser = async function (
+  userId: string,
+  cookies?: string,
+  signal?: AbortSignal,
+) {
+  return await fetch(`${this.url}/admin/users/${userId}`, {
+    method: "DELETE",
+    headers: cookies ? { Cookie: cookies } : {},
     signal,
   });
 };

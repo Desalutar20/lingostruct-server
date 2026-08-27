@@ -61,7 +61,7 @@ describe("Authentication", () => {
           ],
         ] as const;
 
-        await Promise.allSettled(
+        const results = await Promise.allSettled(
           invalidData.map(async ([description, body, field]) => {
             const response = await app.forgotPassword(body, signal);
             expect(response.status, description).toBe(400);
@@ -75,6 +75,14 @@ describe("Authentication", () => {
             });
           }),
         );
+
+        const errors = results
+          .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+          .map((result) => result.reason);
+
+        if (errors.length > 0) {
+          throw new AggregateError(errors, "Some test cases failed");
+        }
       });
     });
 

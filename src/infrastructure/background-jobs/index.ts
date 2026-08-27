@@ -6,11 +6,13 @@ import { DeleteExpiredSessionsProcessor } from "@/infrastructure/background-jobs
 import { DeleteNotVerifiedUsersProcessor } from "@/infrastructure/background-jobs/delete-not-verified-users-processor.js";
 import { OutboxEmailProcessor } from "@/infrastructure/background-jobs/outbox-email-processor.js";
 import { OutboxUserBannedProcessor } from "@/infrastructure/background-jobs/outbox-user-banned-processor.js";
+import { OutboxUserDeletedProcessor } from "@/infrastructure/background-jobs/outbox-user-deleted-processor.js";
 import { EmailTemplateRenderer } from "@/infrastructure/email/email-template-renderer.js";
 
 export class BackgroundJobs {
   private readonly outboxEmailProcessor: OutboxEmailProcessor;
   private readonly outboxUserBanStatusChangedProcessor: OutboxUserBannedProcessor;
+  private readonly outboxUserDeletedProcessor: OutboxUserDeletedProcessor;
   private readonly deleteNotVerifiedUsersProcessor: DeleteNotVerifiedUsersProcessor;
   private readonly deleteExpiredSessionsProcessor: DeleteExpiredSessionsProcessor;
 
@@ -32,6 +34,11 @@ export class BackgroundJobs {
       sessionStore,
       logger,
     );
+    this.outboxUserDeletedProcessor = new OutboxUserDeletedProcessor(
+      unitOfWork,
+      sessionStore,
+      logger,
+    );
     this.deleteNotVerifiedUsersProcessor = new DeleteNotVerifiedUsersProcessor(unitOfWork, logger);
     this.deleteExpiredSessionsProcessor = new DeleteExpiredSessionsProcessor(
       sessionStore,
@@ -43,6 +50,7 @@ export class BackgroundJobs {
   start() {
     this.outboxEmailProcessor.start();
     this.outboxUserBanStatusChangedProcessor.start();
+    this.outboxUserDeletedProcessor.start();
     this.deleteNotVerifiedUsersProcessor.start();
     this.deleteExpiredSessionsProcessor.start();
   }
@@ -50,6 +58,7 @@ export class BackgroundJobs {
   stop() {
     this.outboxEmailProcessor.stop();
     this.outboxUserBanStatusChangedProcessor.stop();
+    this.outboxUserDeletedProcessor.stop();
     this.deleteNotVerifiedUsersProcessor.stop();
     this.deleteExpiredSessionsProcessor.stop();
   }

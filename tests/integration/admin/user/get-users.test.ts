@@ -8,6 +8,8 @@ import {
   GET_USERS_MAX_LIMIT,
   GET_USERS_SEARCH_MAX_LENGTH,
 } from "@/application/admin/users/const/admin-users.const.js";
+import { KeysetCursor } from "@/domain/shared/pagination/keyset-cursor.js";
+import { UserId } from "@/domain/user/user-id.js";
 
 describe("Admin/Users", () => {
   describe("Get Users", () => {
@@ -141,14 +143,14 @@ describe("Admin/Users", () => {
           [
             "Both cursors are provided",
             {
-              prevCursor: "prev",
-              nextCursor: "next",
+              prevCursor: new (KeysetCursor<UserId>())(new Date().toISOString(), UserId.generate()),
+              nextCursor: new (KeysetCursor<UserId>())(new Date().toISOString(), UserId.generate()),
             },
             "cursor",
           ],
         ] as const;
 
-        await Promise.allSettled(
+        const results = await Promise.allSettled(
           invalidData.map(async ([description, body, field]) => {
             const response = await app.getUsers(body, undefined, signal);
             expect(response.status, description).toBe(400);
@@ -162,6 +164,14 @@ describe("Admin/Users", () => {
             });
           }),
         );
+
+        const errors = results
+          .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+          .map((result) => result.reason);
+
+        if (errors.length > 0) {
+          throw new AggregateError(errors, "Some test cases failed");
+        }
       });
     });
 

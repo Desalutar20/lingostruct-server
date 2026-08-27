@@ -46,7 +46,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
     ).map(() => undefined);
   }
 
-  update(workspace: Workspace): ResultAsync<bigint> {
+  update(workspace: Workspace): ResultAsync<undefined> {
     return fromPromise(
       this.db
         .updateTable("workspace")
@@ -62,7 +62,14 @@ export class WorkspaceRepository implements IWorkspaceRepository {
         .where("id", "=", workspace.id.value)
         .executeTakeFirst(),
       (err) => mapDbErrorToAppError(err, "WorkspaceRepository.update"),
-    ).map((result) => result.numUpdatedRows);
+    ).map(() => undefined);
+  }
+
+  delete(workspace: Workspace): ResultAsync<void> {
+    return fromPromise(
+      this.db.deleteFrom("workspace").where("id", "=", workspace.id.value).executeTakeFirst(),
+      (err) => mapDbErrorToAppError(err, "WorkspaceRepository.delete"),
+    ).map(() => undefined);
   }
 
   private static toEntity(row: Selectable<DbWorkspace>): Workspace {

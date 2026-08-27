@@ -117,7 +117,7 @@ export class UserRepository implements IUserRepository {
     ).map(() => undefined);
   }
 
-  update(user: User): ResultAsync<bigint> {
+  update(user: User): ResultAsync<void> {
     return fromPromise(
       this.db
         .updateTable("users")
@@ -137,7 +137,14 @@ export class UserRepository implements IUserRepository {
         .where("id", "=", user.id.value)
         .executeTakeFirst(),
       (err) => mapDbErrorToAppError(err, "UserRepository.update"),
-    ).map((val) => val.numUpdatedRows);
+    ).map(() => undefined);
+  }
+
+  delete(user: User): ResultAsync<void> {
+    return fromPromise(
+      this.db.deleteFrom("users").where("id", "=", user.id.value).executeTakeFirst(),
+      (err) => mapDbErrorToAppError(err, "UserRepository.delete"),
+    ).map(() => undefined);
   }
 
   private static toEntity(row: Selectable<Users>): User {

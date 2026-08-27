@@ -29,6 +29,7 @@ import { KeysetPaginated } from "@/domain/shared/pagination/keyset-paginated.js"
 import { UserId } from "@/domain/user/user-id.js";
 import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
 import { SetUserBannedStatusCommand } from "@/application/admin/users/use-cases/set-user-banned-status.js";
+import { DeleteUserCommand } from "@/application/admin/users/use-cases/delete-user.js";
 
 export type UseCases = {
   auth: {
@@ -46,6 +47,7 @@ export type UseCases = {
     getUsers: IQueryHandler<GetUsersQuery, KeysetPaginated<AdminUserDto, UserId>>;
     updateProfile: ICommandHandler<UpdateProfileCommand, void>;
     setUserBannedStatus: ICommandHandler<SetUserBannedStatusCommand, void>;
+    deleteUser: ICommandHandler<DeleteUserCommand, void>;
   };
   files: {
     createPresignedUrl: ICommandHandler<

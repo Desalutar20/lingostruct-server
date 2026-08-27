@@ -41,5 +41,7 @@ export class Outbox<T> extends Entity {
     outbox._createdAt = createdAt;
     outbox._updatedAt = updatedAt;
     outbox._processedAt = processedAt;
+
+    return outbox;
   }
 }
