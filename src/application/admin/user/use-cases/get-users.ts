@@ -1,6 +1,6 @@
 import { IQueryHandler } from "@/application/abstractions/cqrs/query-handler.interface.js";
 import { IQuery } from "@/application/abstractions/cqrs/query.interface.js";
-import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
+import { AdminUserDto } from "@/application/admin/user/dto/admin-user.dto.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { KeysetPaginated } from "@/domain/shared/pagination/keyset-paginated.js";
 import { KeysetPagination } from "@/domain/shared/pagination/keyset-pagination.js";

@@ -7,16 +7,9 @@ import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-hand
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { unauthorized } from "@/domain/abstractions/errors.js";
-import { UserId } from "@/domain/user/user-id.js";
 import { UserRole } from "@/domain/user/user-role.js";
-import { transformToValueObject } from "@/presentation/shared/schemas/transform-value-object.js";
-import { SetUserBannedStatusCommand } from "@/application/admin/users/use-cases/set-user-banned-status.js";
-
-const SetUserBannedStatusRequestParamSchema = z
-  .object({
-    userId: z.uuid().trim().nonempty().transform(transformToValueObject(UserId.create)),
-  })
-  .strict();
+import { SetUserBannedStatusCommand } from "@/application/admin/user/use-cases/set-user-banned-status.js";
+import { UserIdSchema } from "@/presentation/admin/user/schemas/user-id.schema.js";
 
 const SetUserBannedStatusRequestSchema = z
   .object({
@@ -26,7 +19,7 @@ const SetUserBannedStatusRequestSchema = z
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.patch(
-    "/admin/users/:userId/ban",
+    "/admin/users/:id/ban",
     {
       preHandler: async (req, reply) => {
         const result = await req.authenticate().andThen(() => req.authorize([UserRole.Admin]));
@@ -36,8 +29,8 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       },
       schema: {
         tags: ["Admin/Users"],
+        params: UserIdSchema,
         body: SetUserBannedStatusRequestSchema,
-        params: SetUserBannedStatusRequestParamSchema,
         response: {
           200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
@@ -50,7 +43,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       }
 
       const result = await fastify.useCases.users.setUserBannedStatus.handle(
-        new SetUserBannedStatusCommand(req.params.userId, req.body.isBanned),
+        new SetUserBannedStatusCommand(req.params.id, req.body.isBanned),
       );
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);

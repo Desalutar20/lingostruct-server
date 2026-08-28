@@ -21,14 +21,19 @@ import { UpdateProfileCommandHandler } from "@/application/user/use-cases/update
 import { IDomainEventPublisher } from "@/application/abstractions/domain-events/domain-event-publisher.interface.js";
 import { CreatePresignedUrlCommandHandler } from "@/application/object-storage/use-cases/create-presigned-url.js";
 import { IObjectStorage } from "@/application/abstractions/object-storage/object-storage.interface.js";
-import { GetUsersQueryHandlers } from "@/application/admin/users/use-cases/get-users.js";
-import { SetUserBannedStatusCommandHandler } from "@/application/admin/users/use-cases/set-user-banned-status.js";
-import { DeleteUserCommandHandler } from "@/application/admin/users/use-cases/delete-user.js";
+import { GetUsersQueryHandlers } from "@/application/admin/user/use-cases/get-users.js";
+import { SetUserBannedStatusCommandHandler } from "@/application/admin/user/use-cases/set-user-banned-status.js";
+import { DeleteUserCommandHandler } from "@/application/admin/user/use-cases/delete-user.js";
+import { CreateWorkspaceCommandHandler } from "@/application/admin/workspace/use-cases/create-workspace.js";
+import { IWorkspaceRepository } from "@/domain/workspace/workspace-repository.interface.js";
+import { GetWorkspacesQueryHandlers } from "@/application/admin/workspace/use-cases/get-workspaces.js";
+import { UpdateWorkspaceCommandHandler } from "@/application/admin/workspace/use-cases/update-workspace.js";
 
 export const setupUseCases = ({
   unitOfWork,
   userRepository,
   outboxRepository,
+  workspaceRepository,
   passwordHasher,
   tokenGenerator,
   cache,
@@ -40,6 +45,7 @@ export const setupUseCases = ({
 }: {
   unitOfWork: IUnitOfWork;
   userRepository: IUserRepository;
+  workspaceRepository: IWorkspaceRepository;
   outboxRepository: IOutboxRepository;
   passwordHasher: IPasswordHasher;
   tokenGenerator: ITokenGenerator;
@@ -104,6 +110,11 @@ export const setupUseCases = ({
     },
     files: {
       createPresignedUrl: new CreatePresignedUrlCommandHandler(objectStorage),
+    },
+    workspaces: {
+      getWorkspaces: new GetWorkspacesQueryHandlers(workspaceRepository),
+      createWorkspace: new CreateWorkspaceCommandHandler(workspaceRepository),
+      updateWorkspace: new UpdateWorkspaceCommandHandler(workspaceRepository),
     },
   };
 };

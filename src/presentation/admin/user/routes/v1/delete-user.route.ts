@@ -7,20 +7,13 @@ import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-hand
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { unauthorized } from "@/domain/abstractions/errors.js";
-import { UserId } from "@/domain/user/user-id.js";
 import { UserRole } from "@/domain/user/user-role.js";
-import { transformToValueObject } from "@/presentation/shared/schemas/transform-value-object.js";
-import { DeleteUserCommand } from "@/application/admin/users/use-cases/delete-user.js";
-
-const DeleteUserParamSchema = z
-  .object({
-    userId: z.uuid().trim().nonempty().transform(transformToValueObject(UserId.create)),
-  })
-  .strict();
+import { DeleteUserCommand } from "@/application/admin/user/use-cases/delete-user.js";
+import { UserIdSchema } from "@/presentation/admin/user/schemas/user-id.schema.js";
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.delete(
-    "/admin/users/:userId",
+    "/admin/users/:id",
     {
       preHandler: async (req, reply) => {
         const result = await req.authenticate().andThen(() => req.authorize([UserRole.Admin]));
@@ -30,7 +23,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       },
       schema: {
         tags: ["Admin/Users"],
-        params: DeleteUserParamSchema,
+        params: UserIdSchema,
         response: {
           200: SuccessResponseSchema(z.string()),
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
@@ -43,7 +36,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       }
 
       const result = await fastify.useCases.users.deleteUser.handle(
-        new DeleteUserCommand(req.params.userId),
+        new DeleteUserCommand(req.params.id),
       );
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);

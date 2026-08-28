@@ -44,11 +44,11 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("created_at", "timestamptz", (col) => col.notNull().defaultTo(sql`now()`))
     .addColumn("updated_at", "timestamptz", (col) => col.notNull().defaultTo(sql`now()`))
     .addColumn("name", "text", (col) => col.notNull())
-    .addColumn("country", "text")
-    .addColumn("city", "text")
-    .addColumn("street", "text")
-    .addColumn("street_number", "text")
-    .addColumn("postal_code", "text")
+    .addColumn("country", "text", (col) => col.notNull())
+    .addColumn("city", "text", (col) => col.notNull())
+    .addColumn("street", "text", (col) => col.notNull())
+    .addColumn("street_number", "text", (col) => col.notNull())
+    .addColumn("postal_code", "text", (col) => col.notNull())
     .execute();
 }
 

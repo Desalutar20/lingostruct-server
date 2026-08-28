@@ -4,15 +4,13 @@ import { faker } from "@faker-js/faker";
 import { Password } from "@/domain/user/password.js";
 import "../../helpers/requests/index.js";
 import { UserRole } from "@/domain/user/user-role.js";
-import {
-  GET_USERS_MAX_LIMIT,
-  GET_USERS_SEARCH_MAX_LENGTH,
-} from "@/application/admin/user/const/admin-user.const.js";
+import { GET_USERS_SEARCH_MAX_LENGTH } from "@/application/admin/user/const/admin-user.const.js";
 import { KeysetCursor } from "@/domain/shared/pagination/keyset-cursor.js";
-import { UserId } from "@/domain/user/user-id.js";
+import { GET_WORKSPACES_MAX_LIMIT } from "@/application/admin/workspace/const/admin-workspace.const.js";
+import { WorkspaceId } from "@/domain/workspace/workspace-id.js";
 
-describe("Admin/Users", () => {
-  describe("Get Users", () => {
+describe("Admin/Workspaces", () => {
+  describe("Get Workspaces", () => {
     const validData = {
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
@@ -24,7 +22,7 @@ describe("Admin/Users", () => {
       await TestApp.run(async (app) => {
         const { cookies } = await app.signUpAndSignIn(validData, signal, UserRole.Admin);
 
-        const response = await app.getUsers({}, cookies, signal);
+        const response = await app.getWorkspaces({}, cookies, signal);
         expect(response.status).toBe(200);
 
         const data = await response.json();
@@ -36,19 +34,16 @@ describe("Admin/Users", () => {
               id: expect.any(String),
               createdAt: expect.any(String),
               updatedAt: expect.any(String),
-              email: expect.any(String),
-              firstName: expect.any(String),
-              lastName: expect.any(String),
-              role: expect.any(String),
-              isBanned: expect.any(Boolean),
-              isVerified: expect.any(Boolean),
-              googleId: null,
-              githubId: null,
-              avatarUrl: null,
+              name: expect.any(String),
+              country: expect.any(String),
+              city: expect.any(String),
+              street: expect.any(String),
+              streetNumber: expect.any(String),
+              postalCode: expect.any(String),
             },
           ]),
           prevCursor: null,
-          nextCursor: null,
+          nextCursor: expect.any(String),
         });
       });
     });
@@ -78,20 +73,6 @@ describe("Admin/Users", () => {
             "search",
           ],
           [
-            "Invalid isBanned value",
-            {
-              isBanned: "not bool",
-            },
-            "isBanned",
-          ],
-          [
-            "Invalid isVerified value",
-            {
-              isVerified: "not bool",
-            },
-            "isVerified",
-          ],
-          [
             "Limit is negative",
             {
               limit: -1,
@@ -106,9 +87,9 @@ describe("Admin/Users", () => {
             "limit",
           ],
           [
-            `Limit is greater than ${GET_USERS_MAX_LIMIT}`,
+            `Limit is greater than ${GET_WORKSPACES_MAX_LIMIT}`,
             {
-              limit: GET_USERS_MAX_LIMIT + 1,
+              limit: GET_WORKSPACES_MAX_LIMIT + 1,
             },
             "limit",
           ],
@@ -143,8 +124,14 @@ describe("Admin/Users", () => {
           [
             "Both cursors are provided",
             {
-              prevCursor: new (KeysetCursor<UserId>())(new Date().toISOString(), UserId.generate()),
-              nextCursor: new (KeysetCursor<UserId>())(new Date().toISOString(), UserId.generate()),
+              prevCursor: new (KeysetCursor<WorkspaceId>())(
+                new Date().toISOString(),
+                WorkspaceId.generate(),
+              ),
+              nextCursor: new (KeysetCursor<WorkspaceId>())(
+                new Date().toISOString(),
+                WorkspaceId.generate(),
+              ),
             },
             "cursor",
           ],
@@ -152,7 +139,7 @@ describe("Admin/Users", () => {
 
         const results = await Promise.allSettled(
           invalidData.map(async ([description, body, field]) => {
-            const response = await app.getUsers(body, undefined, signal);
+            const response = await app.getWorkspaces(body, undefined, signal);
             expect(response.status, description).toBe(400);
 
             const data = await response.json();
@@ -177,7 +164,7 @@ describe("Admin/Users", () => {
 
     it("Should return 401 status code when user is not logged in", async ({ signal }) => {
       await TestApp.run(async (app) => {
-        const response = await app.getUsers(undefined, undefined, signal);
+        const response = await app.getWorkspaces(undefined, undefined, signal);
         expect(response.status).toBe(401);
       });
     });
@@ -186,7 +173,7 @@ describe("Admin/Users", () => {
       await TestApp.run(async (app) => {
         const { cookies } = await app.signUpAndSignIn(validData, signal);
 
-        const response = await app.getUsers(undefined, cookies, signal);
+        const response = await app.getWorkspaces(undefined, cookies, signal);
         expect(response.status).toBe(403);
       });
     });

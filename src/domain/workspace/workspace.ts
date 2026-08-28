@@ -21,6 +21,26 @@ export class Workspace extends Entity<WorkspaceId> {
     return this._address;
   }
 
+  public update(name?: WorkspaceName, address?: WorkspaceAddress): boolean {
+    let isUpdated = false;
+
+    if (name !== undefined && !name.equals(this._name)) {
+      this._name = name;
+      isUpdated = true;
+    }
+
+    if (address !== undefined && !address.equals(this._address)) {
+      this._address = address;
+      isUpdated = true;
+    }
+
+    if (isUpdated) {
+      this._updatedAt = nowIso();
+    }
+
+    return isUpdated;
+  }
+
   public static restore(
     id: WorkspaceId,
     createdAt: string,

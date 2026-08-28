@@ -24,12 +24,17 @@ import { URL } from "@/domain/shared/value-objects/url.js";
 import { CreatePresignedUrlCommand } from "@/application/object-storage/use-cases/create-presigned-url.js";
 import { OAuthState } from "@/application/abstractions/auth/oauth-state.js";
 import { IQueryHandler } from "@/application/abstractions/cqrs/query-handler.interface.js";
-import { GetUsersQuery } from "@/application/admin/users/use-cases/get-users.js";
+import { GetUsersQuery } from "@/application/admin/user/use-cases/get-users.js";
 import { KeysetPaginated } from "@/domain/shared/pagination/keyset-paginated.js";
 import { UserId } from "@/domain/user/user-id.js";
-import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
-import { SetUserBannedStatusCommand } from "@/application/admin/users/use-cases/set-user-banned-status.js";
-import { DeleteUserCommand } from "@/application/admin/users/use-cases/delete-user.js";
+import { AdminUserDto } from "@/application/admin/user/dto/admin-user.dto.js";
+import { SetUserBannedStatusCommand } from "@/application/admin/user/use-cases/set-user-banned-status.js";
+import { DeleteUserCommand } from "@/application/admin/user/use-cases/delete-user.js";
+import { CreateWorkspaceCommand } from "@/application/admin/workspace/use-cases/create-workspace.js";
+import { GetWorkspacesQuery } from "@/application/admin/workspace/use-cases/get-workspaces.js";
+import { AdminWorkspaceDto } from "@/application/admin/workspace/dto/admin-workspace.dto.js";
+import { WorkspaceId } from "@/domain/workspace/workspace-id.js";
+import { UpdateWorkspaceCommand } from "@/application/admin/workspace/use-cases/update-workspace.js";
 
 export type UseCases = {
   auth: {
@@ -54,6 +59,14 @@ export type UseCases = {
       CreatePresignedUrlCommand,
       { uploadUrl: URL; publicUrl: URL }
     >;
+  };
+  workspaces: {
+    getWorkspaces: ICommandHandler<
+      GetWorkspacesQuery,
+      KeysetPaginated<AdminWorkspaceDto, WorkspaceId>
+    >;
+    createWorkspace: ICommandHandler<CreateWorkspaceCommand, AdminWorkspaceDto>;
+    updateWorkspace: ICommandHandler<UpdateWorkspaceCommand, void>;
   };
 };
 

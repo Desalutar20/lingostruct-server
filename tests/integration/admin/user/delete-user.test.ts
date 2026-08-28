@@ -4,7 +4,7 @@ import { faker } from "@faker-js/faker";
 import { Password } from "@/domain/user/password.js";
 import "../../helpers/requests/index.js";
 import { UserRole } from "@/domain/user/user-role.js";
-import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
+import { AdminUserDto } from "@/application/admin/user/dto/admin-user.dto.js";
 
 describe("Admin/Users", () => {
   describe("Delete user", () => {
@@ -45,7 +45,7 @@ describe("Admin/Users", () => {
 
         expect(data).toMatchObject({
           errors: {
-            userId: [expect.any(String)],
+            id: [expect.any(String)],
           },
         });
       });

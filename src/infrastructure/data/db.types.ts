@@ -49,14 +49,14 @@ export interface Users {
 }
 
 export interface Workspace {
-  city: string | null;
-  country: string | null;
+  city: string;
+  country: string;
   createdAt: Generated<Timestamp>;
   id: Generated<string>;
   name: string;
-  postalCode: string | null;
-  street: string | null;
-  streetNumber: string | null;
+  postalCode: string;
+  street: string;
+  streetNumber: string;
   updatedAt: Generated<Timestamp>;
 }
 

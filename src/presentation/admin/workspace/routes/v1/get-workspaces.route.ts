@@ -6,66 +6,46 @@ import { mapAppErrorToHttpError } from "@/presentation/shared/helpers/error-hand
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { unauthorized } from "@/domain/abstractions/errors.js";
-import { GetUsersQuery } from "@/application/admin/users/use-cases/get-users.js";
-import { UserId } from "@/domain/user/user-id.js";
 import { KeysetPagination } from "@/domain/shared/pagination/keyset-pagination.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
 import { CursorPaginationSchema } from "@/presentation/shared/schemas/pagination/cursor-pagination.schema.js";
 import { UserRole } from "@/domain/user/user-role.js";
 import { CursorPaginatedSchema } from "@/presentation/shared/schemas/pagination/cursor-paginated.schema.js";
-import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
-import {
-  EmailSchema,
-  IsoStringSchema,
-  NonEmptyStringSchema,
-} from "@/presentation/shared/schemas/common.schema.js";
+import { NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
 import { transformToValueObjectOptional } from "@/presentation/shared/schemas/transform-value-object.js";
 import { NonEmptyString } from "@/domain/shared/value-objects/non-empty-string.js";
-import { UserFilters } from "@/domain/user/user-filters.js";
-import {
-  GET_USERS_DEFAULT_LIMIT,
-  GET_USERS_MAX_LIMIT,
-  GET_USERS_SEARCH_MAX_LENGTH,
-} from "@/application/admin/users/const/admin-users.const.js";
 
-const GetUsersRequestQuerySchema = CursorPaginationSchema(
-  UserId.create,
-  PositiveInt.create(GET_USERS_MAX_LIMIT)._unsafeUnwrap(),
-  PositiveInt.create(GET_USERS_DEFAULT_LIMIT)._unsafeUnwrap(),
+import { WorkspaceId } from "@/domain/workspace/workspace-id.js";
+import {
+  GET_WORKSPACES_DEFAULT_LIMIT,
+  GET_WORKSPACES_MAX_LIMIT,
+  GET_WORKSPACES_SEARCH_MAX_LENGTH,
+} from "@/application/admin/workspace/const/admin-workspace.const.js";
+import { WorkspaceFilters } from "@/domain/workspace/workspace-filters.js";
+import { GetWorkspacesQuery } from "@/application/admin/workspace/use-cases/get-workspaces.js";
+import { AdminWorkspaceSchema } from "@/presentation/admin/workspace/schemas/admin-workspace.schema.js";
+
+const GetWorkspacesRequestQuerySchema = CursorPaginationSchema(
+  WorkspaceId.create,
+  PositiveInt.create(GET_WORKSPACES_MAX_LIMIT)._unsafeUnwrap(),
+  PositiveInt.create(GET_WORKSPACES_DEFAULT_LIMIT)._unsafeUnwrap(),
 ).and(
   z
     .object({
-      search: NonEmptyStringSchema.max(GET_USERS_SEARCH_MAX_LENGTH)
+      search: NonEmptyStringSchema.max(GET_WORKSPACES_SEARCH_MAX_LENGTH)
         .optional()
         .transform(
           transformToValueObjectOptional((val) => NonEmptyString.create(val, "search", "Search")),
         ),
-      isBanned: z.stringbool().optional(),
-      isVerified: z.stringbool().optional(),
     })
     .strict(),
 );
 
-const GetUsersResponseSchema = CursorPaginatedSchema(
-  z.object({
-    id: NonEmptyStringSchema,
-    createdAt: IsoStringSchema,
-    updatedAt: IsoStringSchema,
-    email: EmailSchema,
-    firstName: NonEmptyStringSchema.nullable(),
-    lastName: NonEmptyStringSchema.nullable(),
-    role: NonEmptyStringSchema,
-    isBanned: z.boolean(),
-    isVerified: z.boolean(),
-    googleId: NonEmptyStringSchema.nullable(),
-    githubId: NonEmptyStringSchema.nullable(),
-    avatarUrl: NonEmptyStringSchema.nullable(),
-  }) satisfies z.ZodType<AdminUserDto>,
-);
+const GetWorkspacesResponseSchema = CursorPaginatedSchema(AdminWorkspaceSchema);
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.get(
-    "/admin/users",
+    "/admin/workspaces",
     {
       preHandler: async (req, reply) => {
         const result = await req.authenticate().andThen(() => req.authorize([UserRole.Admin]));
@@ -74,10 +54,10 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         }
       },
       schema: {
-        tags: ["Admin/Users"],
-        querystring: GetUsersRequestQuerySchema,
+        tags: ["Admin/Workspaces"],
+        querystring: GetWorkspacesRequestQuerySchema,
         response: {
-          200: GetUsersResponseSchema,
+          200: GetWorkspacesResponseSchema,
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
         },
       },
@@ -87,20 +67,16 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         return mapAppErrorToHttpError(reply, unauthorized());
       }
 
-      const filters = new UserFilters(
-        req.query.search ?? undefined,
-        req.query.isBanned,
-        req.query.isVerified,
-      );
+      const filters = new WorkspaceFilters(req.query.search ?? undefined);
 
-      const pagination = new KeysetPagination<UserId>(
+      const pagination = new KeysetPagination<WorkspaceId>(
         req.query.limit,
         req.query.prevCursor ?? null,
         req.query.nextCursor ?? null,
       );
 
-      const result = await fastify.useCases.users.getUsers.handle(
-        new GetUsersQuery(filters, pagination),
+      const result = await fastify.useCases.workspaces.getWorkspaces.handle(
+        new GetWorkspacesQuery(filters, pagination),
       );
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);

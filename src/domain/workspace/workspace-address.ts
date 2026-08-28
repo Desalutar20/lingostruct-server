@@ -1,4 +1,3 @@
-import { Nullable } from "@/app/types.js";
 import { validation } from "@/domain/abstractions/errors.js";
 import { Result, ResultWithAllErrors } from "@/domain/abstractions/result.js";
 import { ValueObject } from "@/domain/shared/value-objects/value-object.js";
@@ -13,38 +12,38 @@ export class WorkspaceAddress extends ValueObject<WorkspaceAddress> {
   public static readonly postalCodeMaxLength = 20;
 
   private constructor(
-    protected readonly _country: Nullable<string>,
-    protected readonly _city: Nullable<string>,
-    protected readonly _street: Nullable<string>,
-    protected readonly _streetNumber: Nullable<string>,
-    protected readonly _postalCode: Nullable<string>,
+    protected readonly _country: string,
+    protected readonly _city: string,
+    protected readonly _street: string,
+    protected readonly _streetNumber: string,
+    protected readonly _postalCode: string,
   ) {
     super();
   }
 
-  public get country(): Nullable<string> {
+  public get country(): string {
     return this._country;
   }
 
-  public get city(): Nullable<string> {
+  public get city(): string {
     return this._city;
   }
-  public get street(): Nullable<string> {
+  public get street(): string {
     return this._street;
   }
-  public get streetNumber(): Nullable<string> {
+  public get streetNumber(): string {
     return this._streetNumber;
   }
-  public get postalCode(): Nullable<string> {
+  public get postalCode(): string {
     return this._postalCode;
   }
 
   public static create(values: {
-    country: Nullable<string>;
-    city: Nullable<string>;
-    street: Nullable<string>;
-    streetNumber: Nullable<string>;
-    postalCode: Nullable<string>;
+    country: string;
+    city: string;
+    street: string;
+    streetNumber: string;
+    postalCode: string;
   }): ResultWithAllErrors<WorkspaceAddress> {
     const country = values.country?.trim();
     const city = values.city?.trim();
@@ -78,16 +77,7 @@ export class WorkspaceAddress extends ValueObject<WorkspaceAddress> {
         "Workspace postal code",
         WorkspaceAddress.postalCodeMaxLength,
       ),
-    ]).map(
-      () =>
-        new WorkspaceAddress(
-          country ?? null,
-          city ?? null,
-          street ?? null,
-          streetNumber ?? null,
-          postalCode ?? null,
-        ),
-    );
+    ]).map(() => new WorkspaceAddress(country, city, street, streetNumber, postalCode));
   }
 
   public equals(other: WorkspaceAddress): boolean {

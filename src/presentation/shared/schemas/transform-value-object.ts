@@ -8,6 +8,7 @@ const setError = (error: AppError, ctx: RefinementCtx) => {
       ctx.addIssue({
         code: "custom",
         message,
+        path: [error.field],
       });
     }
   } else {

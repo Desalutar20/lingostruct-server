@@ -8,13 +8,19 @@ import { IOutboxRepository } from "@/application/abstractions/database/outbox/ou
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { fromPromise } from "neverthrow";
 import { internal } from "@/domain/abstractions/errors.js";
+import { WorkspaceRepository } from "@/infrastructure/data/workspace/workspace-repository.js";
+import { IWorkspaceRepository } from "@/domain/workspace/workspace-repository.interface.js";
 
 export class UnitOfWork implements IUnitOfWork {
   constructor(private readonly kysely: Kysely<DB>) {}
 
   execute<T>(
     action: (
-      repositories: { userRepository: IUserRepository; outboxRepository: IOutboxRepository },
+      repositories: {
+        userRepository: IUserRepository;
+        outboxRepository: IOutboxRepository;
+        workspaceRepository: IWorkspaceRepository;
+      },
       actions: { commit: () => ResultAsync<void>; rollback: () => ResultAsync<void> },
     ) => ResultAsync<T>,
   ): ResultAsync<T> {
@@ -23,9 +29,10 @@ export class UnitOfWork implements IUnitOfWork {
     ).andThen((trx) => {
       const userRepository = new UserRepository(trx);
       const outboxRepository = new OutboxRepository(trx);
+      const workspaceRepository = new WorkspaceRepository(trx);
 
       return action(
-        { userRepository, outboxRepository },
+        { userRepository, workspaceRepository, outboxRepository },
         {
           commit: () =>
             fromPromise(trx.commit().execute(), (err) =>

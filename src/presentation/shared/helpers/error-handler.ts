@@ -19,22 +19,40 @@ const mapErrorToCodeAndMessage = (error: AppError): [number, string] => {
   }
 };
 
-export const mapAppErrorToHttpError = (reply: FastifyReply, error: AppError) => {
-  if (error.type === "Validation") {
-    return reply.status(400).send({ status: "error", code: error.code, errors: error.errors });
+export const mapAppErrorToHttpError = (reply: FastifyReply, error: AppError | AppError[]) => {
+  if (Array.isArray(error) && error.every((err) => err.code === "VALIDATION")) {
+    return reply.status(400).send({
+      status: "error",
+      code: "VALIDATION",
+      errors: error.reduce(
+        (acc, val) => {
+          acc[val.field] = val.errors;
+          return acc;
+        },
+        {} as Record<string, string[]>,
+      ),
+    });
   }
 
-  const [status, message] = mapErrorToCodeAndMessage(error);
+  const err = Array.isArray(error) ? error[0] : error;
 
-  if (error.type !== "Internal") {
-    return reply.status(status).send({ status: "error", code: error.code, error: message });
+  if (err.type === "Validation") {
+    return reply
+      .status(400)
+      .send({ status: "error", code: err.code, errors: { [err.field]: err.errors } });
+  }
+
+  const [status, message] = mapErrorToCodeAndMessage(err);
+
+  if (err.type !== "Internal") {
+    return reply.status(status).send({ status: "error", code: err.code, error: message });
   }
 
   reply.log.error(
     {
-      err: error.error,
+      err: err.error,
     },
-    `Unhandled error occurred - ${error.message}`,
+    `Unhandled error occurred - ${err.message}`,
   );
-  return reply.status(status).send({ status: "error", code: error.code, error: message });
+  return reply.status(status).send({ status: "error", code: err.code, error: message });
 };

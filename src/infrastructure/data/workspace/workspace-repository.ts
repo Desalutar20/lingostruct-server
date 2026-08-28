@@ -1,4 +1,4 @@
-import { Kysely, Selectable } from "kysely";
+import { Expression, Kysely, Selectable, SqlBool } from "kysely";
 import { DB } from "../db.types.js";
 import { mapDbErrorToAppError } from "../database-errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
@@ -9,14 +9,43 @@ import { WorkspaceId } from "@/domain/workspace/workspace-id.js";
 import { WorkspaceName } from "@/domain/workspace/workspace-name.js";
 import { WorkspaceAddress } from "@/domain/workspace/workspace-address.js";
 import { Workspace as DbWorkspace } from "@/infrastructure/data/db.types.js";
+import { WorkspaceFilters } from "@/domain/workspace/workspace-filters.js";
+import { KeysetPaginated } from "@/domain/shared/pagination/keyset-paginated.js";
+import { KeysetPagination } from "@/domain/shared/pagination/keyset-pagination.js";
+import { applyCursorPagination } from "@/infrastructure/data/helpers/apply-cursor-pagination.js";
 
 export class WorkspaceRepository implements IWorkspaceRepository {
   constructor(private readonly db: Kysely<DB>) {}
 
-  getAll(): ResultAsync<Workspace[]> {
-    return fromPromise(this.db.selectFrom("workspace").selectAll().execute(), (err) =>
-      mapDbErrorToAppError(err, "WorkspaceRepository.getAll"),
-    ).map((rows) => rows.map((row) => WorkspaceRepository.toEntity(row)));
+  getAll(
+    filters: WorkspaceFilters,
+    pagination: KeysetPagination<WorkspaceId>,
+  ): ResultAsync<KeysetPaginated<Workspace, WorkspaceId>> {
+    return fromPromise(
+      (async () => {
+        let query = this.db.selectFrom("workspace").selectAll();
+
+        query = query.where((eb) => {
+          const ands: Expression<SqlBool>[] = [];
+
+          if (filters.search !== undefined) {
+            ands.push(eb("name", "ilike", `%${filters.search.value}%`));
+          }
+
+          return eb.and(ands);
+        });
+
+        query = applyCursorPagination(pagination, query);
+
+        const data = (await query.execute()).map((row) => WorkspaceRepository.toEntity(row));
+
+        return new KeysetPaginated<Workspace, WorkspaceId>(data, pagination, (workspace) => ({
+          createdAt: workspace.createdAt,
+          id: workspace.id,
+        }));
+      })(),
+      (err) => mapDbErrorToAppError(err, "WorkspaceRepository.getAll"),
+    );
   }
 
   getById(id: WorkspaceId): ResultAsync<Workspace | null> {

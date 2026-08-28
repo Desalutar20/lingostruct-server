@@ -4,7 +4,7 @@ import { faker } from "@faker-js/faker";
 import { Password } from "@/domain/user/password.js";
 import "../../helpers/requests/index.js";
 import { UserRole } from "@/domain/user/user-role.js";
-import { AdminUserDto } from "@/application/admin/users/dto/admin-user.dto.js";
+import { AdminUserDto } from "@/application/admin/user/dto/admin-user.dto.js";
 
 describe("Admin/Users", () => {
   describe("Set user banned status", () => {
@@ -48,11 +48,11 @@ describe("Admin/Users", () => {
     it("Should return 400 status code when data is invalid", async ({ signal }) => {
       await TestApp.run(async (app) => {
         const invalidData = [
-          ["Invalid id", { userId: "not uuid", isBanned: true }, "userId"],
+          ["Invalid id", { id: "not uuid", isBanned: true }, "id"],
           [
             "Invalid isBanned value",
             {
-              userId: crypto.randomUUID(),
+              id: crypto.randomUUID(),
               isBanned: "not bool",
             },
             "isBanned",
@@ -60,8 +60,8 @@ describe("Admin/Users", () => {
         ] as const;
 
         const results = await Promise.allSettled(
-          invalidData.map(async ([description, { userId, ...body }, field]) => {
-            const response = await app.setUserBannedStatus(userId, body, undefined, signal);
+          invalidData.map(async ([description, { id, ...body }, field]) => {
+            const response = await app.setUserBannedStatus(id, body, undefined, signal);
             expect(response.status, description).toBe(400);
 
             const data = await response.json();
