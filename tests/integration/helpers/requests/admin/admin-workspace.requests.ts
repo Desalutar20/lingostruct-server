@@ -20,6 +20,8 @@ declare module "../../test-app.js" {
       cookies?: string,
       signal?: AbortSignal,
     ): Promise<Response>;
+
+    deleteWorkspace(workspaceId: string, cookies?: string, signal?: AbortSignal): Promise<Response>;
   }
 }
 
@@ -67,6 +69,18 @@ TestApp.prototype.updateWorkspace = async function (
       ...(cookies ? { Cookie: cookies } : {}),
     },
     body: JSON.stringify(body),
+    signal,
+  });
+};
+
+TestApp.prototype.deleteWorkspace = async function (
+  workspaceId: string,
+  cookies?: string,
+  signal?: AbortSignal,
+) {
+  return await fetch(`${this.url}/admin/workspaces/${workspaceId}`, {
+    method: "DELETE",
+    headers: cookies ? { Cookie: cookies } : {},
     signal,
   });
 };

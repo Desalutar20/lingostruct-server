@@ -24,7 +24,6 @@ describe("Admin/Users", () => {
 
         const data = (await getUsersResponse.json()) as { data: AdminUserDto[] };
         const user = data.data[0];
-
         expect(user).toBeDefined();
 
         const response = await app.setUserBannedStatus(

@@ -6,6 +6,7 @@ import "../../helpers/requests/index.js";
 import { UserRole } from "@/domain/user/user-role.js";
 import { WorkspaceName } from "@/domain/workspace/workspace-name.js";
 import { WorkspaceAddress } from "@/domain/workspace/workspace-address.js";
+import { WorkspaceRole } from "@/domain/workspace-user/workspace-role.js";
 
 describe("Admin/Workspaces", () => {
   describe("Create workspace", () => {
@@ -27,7 +28,7 @@ describe("Admin/Workspaces", () => {
 
     it("Should return 201 status code when request is successful", async ({ signal }) => {
       await TestApp.run(async (app) => {
-        const { cookies } = await app.signUpAndSignIn(validData, signal, UserRole.Admin);
+        const { cookies, session } = await app.signUpAndSignIn(validData, signal, UserRole.Admin);
 
         const response = await app.createWorkspace(validWorkspaceData, cookies, signal);
         expect(response.status).toBe(201);
@@ -51,6 +52,13 @@ describe("Admin/Workspaces", () => {
         //@ts-ignore
         const workspaceFromDb = await app.getWorkspaceFromDbById(data.data.id);
         expect(workspaceFromDb).toBeDefined();
+
+        const workspaceUserFromDb = await app.getWorkspaceUserFromDbByWorkspaceIdAndUserId(
+          workspaceFromDb!.id,
+          session.id,
+        );
+        expect(workspaceUserFromDb).toBeDefined();
+        expect(workspaceUserFromDb!.role).toBe(WorkspaceRole.Owner.value);
       });
     });
 

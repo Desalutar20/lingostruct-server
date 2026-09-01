@@ -101,7 +101,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
     ).map(() => undefined);
   }
 
-  private static toEntity(row: Selectable<DbWorkspace>): Workspace {
+  static toEntity(row: Selectable<DbWorkspace>): Workspace {
     return Workspace.restore(
       WorkspaceId.create(row.id)._unsafeUnwrap(),
       row.createdAt.toISOString(),

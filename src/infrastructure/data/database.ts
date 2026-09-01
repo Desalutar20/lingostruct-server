@@ -1,4 +1,10 @@
-import { CamelCasePlugin, Kysely, PostgresDialect, SafeNullComparisonPlugin } from "kysely";
+import {
+  CamelCasePlugin,
+  Kysely,
+  ParseJSONResultsPlugin,
+  PostgresDialect,
+  SafeNullComparisonPlugin,
+} from "kysely";
 import { DatabaseConfig } from "../../application/config/database.config.js";
 import { Pool } from "pg";
 import { DB } from "./db.types.js";
@@ -12,11 +18,17 @@ export class Database extends Kysely<DB> {
         user: config.user,
         password: config.password,
         port: config.port,
-        //TODO
-        max: 100,
+        max: 10,
       }),
     });
 
-    super({ dialect, plugins: [new CamelCasePlugin(), new SafeNullComparisonPlugin()] });
+    super({
+      dialect,
+      plugins: [
+        new CamelCasePlugin(),
+        new SafeNullComparisonPlugin(),
+        new ParseJSONResultsPlugin(),
+      ],
+    });
   }
 }

@@ -3,6 +3,7 @@ import "./user.requests.js";
 import "./db.requests.js";
 import "./cache.requests.js";
 import "./admin/index.js";
+import "./workspace.requests.js";
 
 export const applySearch = (url: URL, search?: Record<string, unknown>) => {
   if (search === undefined) return;

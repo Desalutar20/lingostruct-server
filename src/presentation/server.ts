@@ -35,6 +35,9 @@ import { GetWorkspacesQuery } from "@/application/admin/workspace/use-cases/get-
 import { AdminWorkspaceDto } from "@/application/admin/workspace/dto/admin-workspace.dto.js";
 import { WorkspaceId } from "@/domain/workspace/workspace-id.js";
 import { UpdateWorkspaceCommand } from "@/application/admin/workspace/use-cases/update-workspace.js";
+import { DeleteWorkspaceCommand } from "@/application/admin/workspace/use-cases/delete-workspace.js";
+import { GetWorkspaceQuery } from "@/application/workspace/use-cases/get-workspace.js";
+import { WorkspaceAccessAuthorizationCommand } from "@/application/workspace/use-cases/workspace-authorization.js";
 
 export type UseCases = {
   auth: {
@@ -61,12 +64,15 @@ export type UseCases = {
     >;
   };
   workspaces: {
+    workspaceAuthorization: ICommandHandler<WorkspaceAccessAuthorizationCommand, void>;
     getWorkspaces: ICommandHandler<
       GetWorkspacesQuery,
       KeysetPaginated<AdminWorkspaceDto, WorkspaceId>
     >;
+    getWorkspace: IQueryHandler<GetWorkspaceQuery, AdminWorkspaceDto>;
     createWorkspace: ICommandHandler<CreateWorkspaceCommand, AdminWorkspaceDto>;
-    updateWorkspace: ICommandHandler<UpdateWorkspaceCommand, void>;
+    updateWorkspace: ICommandHandler<UpdateWorkspaceCommand, AdminWorkspaceDto>;
+    deleteWorkspace: ICommandHandler<DeleteWorkspaceCommand, void>;
   };
 };
 

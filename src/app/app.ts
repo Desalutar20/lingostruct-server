@@ -19,8 +19,13 @@ export const createApp = async (config: Config) => {
 
   await redis.connect();
 
-  const { unitOfWork, userRepository, outboxRepository, workspaceRepository } =
-    setupRepositories(db);
+  const {
+    unitOfWork,
+    userRepository,
+    outboxRepository,
+    workspaceRepository,
+    workspaceUserRepository,
+  } = setupRepositories(db);
   const { passwordHasher, tokenGenerator, emailSender, emailTemplateRenderer, oauthClientFactory } =
     setupServices(config.application, config.smtp, config.oauth);
 
@@ -34,6 +39,7 @@ export const createApp = async (config: Config) => {
     userRepository,
     outboxRepository,
     workspaceRepository,
+    workspaceUserRepository,
     passwordHasher,
     tokenGenerator,
     cache: redis,

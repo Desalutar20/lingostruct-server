@@ -25,7 +25,10 @@ const UpdateProfileSchema = z
       .optional()
       .nullable()
       .transform(transformToValueObjectOptional(LastName.create)),
-    avatarUrl: NonEmptyStringSchema.max(200)
+    avatarUrl: z
+      .url()
+      .trim()
+      .nonempty()
       .optional()
       .nullable()
       .transform(transformToValueObjectOptional((val) => URL.create(val, "avatarUrl"))),

@@ -30,7 +30,7 @@ describe("Authentication", () => {
         const response = await app.forgotPassword({ email: validData.email }, signal);
         expect(response.status).toBe(200);
 
-        const token = await app.getTokenFromCache("passwordResetToken");
+        const token = await app.getTokenFromCache("PASSWORD_RESET_TOKEN");
         expect(token).toBeDefined();
       });
     });

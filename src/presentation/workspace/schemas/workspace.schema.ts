@@ -1,15 +1,9 @@
 import { AdminWorkspaceDto } from "@/application/admin/workspace/dto/admin-workspace.dto.js";
-import {
-  IsoStringSchema,
-  NonEmptyStringSchema,
-} from "@/presentation/shared/schemas/common.schema.js";
+import { NonEmptyStringSchema } from "@/presentation/shared/schemas/common.schema.js";
 import z from "zod";
 
-export const AdminWorkspaceSchema = z
+export const WorkspaceSchema = z
   .object({
-    id: NonEmptyStringSchema,
-    createdAt: IsoStringSchema,
-    updatedAt: IsoStringSchema,
     name: NonEmptyStringSchema,
     country: NonEmptyStringSchema,
     city: NonEmptyStringSchema,
@@ -17,4 +11,6 @@ export const AdminWorkspaceSchema = z
     streetNumber: NonEmptyStringSchema,
     postalCode: NonEmptyStringSchema,
   })
-  .strict() satisfies z.ZodType<AdminWorkspaceDto>;
+  .strict() satisfies z.ZodType<
+  Pick<AdminWorkspaceDto, "name" | "country" | "city" | "street" | "streetNumber" | "postalCode">
+>;

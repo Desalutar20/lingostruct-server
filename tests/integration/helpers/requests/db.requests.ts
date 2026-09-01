@@ -1,5 +1,5 @@
 import { Selectable } from "kysely";
-import { Users, Workspace } from "@/infrastructure/data/db.types.js";
+import { Users, Workspace, WorkspaceUser } from "@/infrastructure/data/db.types.js";
 import { TestApp } from "../test-app.js";
 
 declare module "../test-app.js" {
@@ -9,6 +9,10 @@ declare module "../test-app.js" {
     banUserInDbByEmail(email: string): Promise<void>;
     unVerifyUserInDbByEmail(email: string): Promise<void>;
     getWorkspaceFromDbById(id: string): Promise<Selectable<Workspace> | undefined>;
+    getWorkspaceUserFromDbByWorkspaceIdAndUserId(
+      workspaceId: string,
+      userId: string,
+    ): Promise<Selectable<WorkspaceUser> | undefined>;
   }
 }
 
@@ -42,4 +46,16 @@ TestApp.prototype.unVerifyUserInDbByEmail = async function (email: string) {
 
 TestApp.prototype.getWorkspaceFromDbById = async function (id: string) {
   return await this.db.selectFrom("workspace").selectAll().where("id", "=", id).executeTakeFirst();
+};
+
+TestApp.prototype.getWorkspaceUserFromDbByWorkspaceIdAndUserId = async function (
+  workspaceId: string,
+  userId: string,
+) {
+  return await this.db
+    .selectFrom("workspaceUser")
+    .selectAll()
+    .where("workspaceId", "=", workspaceId)
+    .where("userId", "=", userId)
+    .executeTakeFirst();
 };

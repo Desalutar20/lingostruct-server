@@ -6,7 +6,7 @@ import { IOutboxRepository } from "@/application/abstractions/database/outbox/ou
 import { OutboxType } from "@/application/abstractions/database/outbox/outbox-type.js";
 import { Outbox } from "@/application/abstractions/database/outbox/outbox.js";
 import { ITokenGenerator } from "@/application/abstractions/security/token-generator.interface.js";
-import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
+import { AUTH_CACHE_KEYS } from "@/application/auth/const/auth-cache-keys.const.js";
 import { ApplicationConfig } from "@/application/config/application.config.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
@@ -38,7 +38,7 @@ export class ForgotPasswordCommandHandler implements ICommandHandler<ForgotPassw
       if (!user || !user.isValid) return okAsync();
 
       const token = this.tokenGenerator.generate();
-      const cacheKey = authCacheKeys.passwordResetToken(token);
+      const cacheKey = AUTH_CACHE_KEYS.PASSWORD_RESET_TOKEN(token);
 
       return this.cache.set(cacheKey, user.id.value, this.resetPasswordTTLSeconds).andThen(() => {
         const outboxEmailData: OutboxEmailData = {

@@ -1,6 +1,12 @@
 import { DatabaseConfig } from "@/application/config/database.config.js";
 import { DB } from "@/infrastructure/data/db.types.js";
-import { CamelCasePlugin, Kysely, PostgresDialect, SafeNullComparisonPlugin } from "kysely";
+import {
+  CamelCasePlugin,
+  Kysely,
+  ParseJSONResultsPlugin,
+  PostgresDialect,
+  SafeNullComparisonPlugin,
+} from "kysely";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { Client, Pool } from "pg";
@@ -46,7 +52,7 @@ export const setupTestDatabase = async (config: DatabaseConfig) => {
         port: config.port,
       }),
     }),
-    plugins: [new CamelCasePlugin(), new SafeNullComparisonPlugin()],
+    plugins: [new CamelCasePlugin(), new SafeNullComparisonPlugin(), new ParseJSONResultsPlugin()],
   });
 
   return {

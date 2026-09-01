@@ -2,6 +2,8 @@ import { CamelCasePlugin, SafeNullComparisonPlugin } from "kysely";
 import { defineConfig, getKnexTimestampPrefix } from "kysely-ctl";
 import pg from "pg";
 
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+
 const dialectConfig = {
   pool: new pg.Pool({
     connectionString: process.env.DATABASE_URL,

@@ -7,6 +7,7 @@ import { setupTestDatabase } from "./test-database.js";
 import { setupTestRedis } from "./test-redis.js";
 import { RedisClientType } from "redis";
 import { UserRole } from "@/domain/user/user-role.js";
+import { Session } from "@/application/abstractions/auth/session.type.js";
 
 export class TestApp {
   constructor(
@@ -37,7 +38,7 @@ export class TestApp {
     const signUpResponse = await this.signUp(data, signal);
     expect(signUpResponse.status).toBe(201);
 
-    const token = await this.getTokenFromCache("verificationToken");
+    const token = await this.getTokenFromCache("VERIFICATION_TOKEN");
     expect(token).toBeDefined();
 
     const response = await this.verifyAccount({
@@ -77,6 +78,7 @@ export class TestApp {
     return {
       cookies: response.headers.get("Set-Cookie") ?? undefined,
       sessionId: sessionId!,
+      session: ((await response.json()) as { data: Session }).data,
     };
   }
 

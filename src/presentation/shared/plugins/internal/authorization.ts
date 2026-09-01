@@ -4,6 +4,7 @@ import { ResultAsync } from "@/domain/abstractions/result.js";
 import { errAsync, okAsync } from "neverthrow";
 import { accessForbidden } from "@/domain/abstractions/errors.js";
 import { UserRole } from "@/domain/user/user-role.js";
+import { WorkspaceRole } from "@/domain/workspace-user/workspace-role.js";
 
 declare module "fastify" {
   export interface FastifyRequest {

@@ -147,7 +147,7 @@ export class UserRepository implements IUserRepository {
     ).map(() => undefined);
   }
 
-  private static toEntity(row: Selectable<Users>): User {
+  static toEntity(row: Selectable<Users>): User {
     return User.restore(
       UserId.create(row.id)._unsafeUnwrap(),
       row.createdAt.toISOString(),

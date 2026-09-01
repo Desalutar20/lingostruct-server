@@ -13,7 +13,7 @@ import { ResultAsync } from "@/domain/abstractions/result.js";
 import { ITokenGenerator } from "@/application/abstractions/security/token-generator.interface.js";
 import { ICache } from "@/application/abstractions/cache/cache.interface.js";
 import { err, errAsync, fromPromise, ok, okAsync } from "neverthrow";
-import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
+import { AUTH_CACHE_KEYS } from "@/application/auth/const/auth-cache-keys.const.js";
 import { OutboxEmailData } from "@/application/abstractions/database/outbox/outbox-data.type.js";
 import { ApplicationConfig } from "@/application/config/application.config.js";
 import { PositiveInt } from "@/domain/shared/value-objects/positive-int.js";
@@ -70,7 +70,7 @@ export class SignUpCommandHandler implements ICommandHandler<SignUpCommand, void
         const token = this.tokenGenerator.generate();
         return this.cache
           .set(
-            authCacheKeys.verificationToken(token),
+            AUTH_CACHE_KEYS.VERIFICATION_TOKEN(token),
             user.id.value,
             this.accountVerificationTTlSeconds,
           )

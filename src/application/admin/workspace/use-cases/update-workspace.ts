@@ -1,5 +1,6 @@
 import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
+import { AdminWorkspaceDto } from "@/application/admin/workspace/dto/admin-workspace.dto.js";
 import { failure } from "@/domain/abstractions/errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { WorkspaceAddress } from "@/domain/workspace/workspace-address.js";
@@ -8,7 +9,7 @@ import { WorkspaceName } from "@/domain/workspace/workspace-name.js";
 import { IWorkspaceRepository } from "@/domain/workspace/workspace-repository.interface.js";
 import { err, okAsync } from "neverthrow";
 
-export class UpdateWorkspaceCommand implements ICommand<void> {
+export class UpdateWorkspaceCommand implements ICommand<AdminWorkspaceDto> {
   constructor(
     public readonly id: WorkspaceId,
     public readonly name?: WorkspaceName,
@@ -24,11 +25,11 @@ export class UpdateWorkspaceCommand implements ICommand<void> {
 
 export class UpdateWorkspaceCommandHandler implements ICommandHandler<
   UpdateWorkspaceCommand,
-  void
+  AdminWorkspaceDto
 > {
   constructor(public readonly workspaceRepository: IWorkspaceRepository) {}
 
-  handle(command: UpdateWorkspaceCommand): ResultAsync<void> {
+  handle(command: UpdateWorkspaceCommand): ResultAsync<AdminWorkspaceDto> {
     return this.workspaceRepository.getById(command.id).andThen((workspace) => {
       if (workspace === null)
         return err(failure(`Workspace with id ${command.id.value} not found`, "OPERATION_FAILED"));
@@ -52,9 +53,9 @@ export class UpdateWorkspaceCommandHandler implements ICommandHandler<
       }
 
       const isUpdated = workspace.update(command.name, address);
-      if (!isUpdated) return okAsync();
+      if (!isUpdated) return okAsync(new AdminWorkspaceDto(workspace));
 
-      return this.workspaceRepository.update(workspace);
+      return this.workspaceRepository.update(workspace).map(() => new AdminWorkspaceDto(workspace));
     });
   }
 }

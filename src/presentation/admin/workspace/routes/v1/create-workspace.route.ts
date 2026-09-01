@@ -14,6 +14,7 @@ import { WorkspaceName } from "@/domain/workspace/workspace-name.js";
 import { WorkspaceAddress } from "@/domain/workspace/workspace-address.js";
 import { CreateWorkspaceCommand } from "@/application/admin/workspace/use-cases/create-workspace.js";
 import { AdminWorkspaceSchema } from "@/presentation/admin/workspace/schemas/admin-workspace.schema.js";
+import { UserId } from "@/domain/user/user-id.js";
 
 const CreateWorkspaceRequestSchema = z
   .object({
@@ -61,12 +62,18 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         streetNumber: req.body.streetNumber,
         postalCode: req.body.postalCode,
       });
+
       if (validationResult.isErr()) {
         return mapAppErrorToHttpError(reply, validationResult.error);
       }
 
+      const userIdResult = UserId.create(req.session.id);
+      if (userIdResult.isErr()) {
+        return mapAppErrorToHttpError(reply, userIdResult.error);
+      }
+
       const result = await fastify.useCases.workspaces.createWorkspace.handle(
-        new CreateWorkspaceCommand(req.body.name, validationResult.value),
+        new CreateWorkspaceCommand(userIdResult.value, req.body.name, validationResult.value),
       );
       if (result.isErr()) {
         return mapAppErrorToHttpError(reply, result.error);

@@ -10,6 +10,8 @@ import { fromPromise } from "neverthrow";
 import { internal } from "@/domain/abstractions/errors.js";
 import { WorkspaceRepository } from "@/infrastructure/data/workspace/workspace-repository.js";
 import { IWorkspaceRepository } from "@/domain/workspace/workspace-repository.interface.js";
+import { IWorkspaceUserRepository } from "@/domain/workspace-user/workspace-user-repository.interface.js";
+import { WorkspaceUserRepository } from "@/infrastructure/data/workspace-user/workspace-user-repository.js";
 
 export class UnitOfWork implements IUnitOfWork {
   constructor(private readonly kysely: Kysely<DB>) {}
@@ -20,6 +22,7 @@ export class UnitOfWork implements IUnitOfWork {
         userRepository: IUserRepository;
         outboxRepository: IOutboxRepository;
         workspaceRepository: IWorkspaceRepository;
+        workspaceUserRepository: IWorkspaceUserRepository;
       },
       actions: { commit: () => ResultAsync<void>; rollback: () => ResultAsync<void> },
     ) => ResultAsync<T>,
@@ -30,9 +33,10 @@ export class UnitOfWork implements IUnitOfWork {
       const userRepository = new UserRepository(trx);
       const outboxRepository = new OutboxRepository(trx);
       const workspaceRepository = new WorkspaceRepository(trx);
+      const workspaceUserRepository = new WorkspaceUserRepository(trx);
 
       return action(
-        { userRepository, workspaceRepository, outboxRepository },
+        { userRepository, workspaceRepository, workspaceUserRepository, outboxRepository },
         {
           commit: () =>
             fromPromise(trx.commit().execute(), (err) =>

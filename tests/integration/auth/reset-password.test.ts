@@ -21,7 +21,7 @@ describe("Authentication", () => {
         const forgotPasswordResponse = await app.forgotPassword({ email: validData.email }, signal);
         expect(forgotPasswordResponse.status).toBe(200);
 
-        const token = await app.getTokenFromCache("passwordResetToken");
+        const token = await app.getTokenFromCache("PASSWORD_RESET_TOKEN");
         expect(token).toBeDefined();
 
         const response = await app.resetPassword({
@@ -40,7 +40,7 @@ describe("Authentication", () => {
         const forgotPasswordResponse = await app.forgotPassword({ email: validData.email }, signal);
         expect(forgotPasswordResponse.status).toBe(200);
 
-        const token = await app.getTokenFromCache("passwordResetToken");
+        const token = await app.getTokenFromCache("PASSWORD_RESET_TOKEN");
         expect(token).toBeDefined();
 
         const response = await app.resetPassword({
@@ -50,7 +50,7 @@ describe("Authentication", () => {
         });
         expect(response.status).toBe(200);
 
-        const tokenAfterReset = await app.getTokenFromCache("passwordResetToken");
+        const tokenAfterReset = await app.getTokenFromCache("PASSWORD_RESET_TOKEN");
         expect(tokenAfterReset).toBeUndefined();
 
         const session = await app.getSession(sessionId);
@@ -67,7 +67,7 @@ describe("Authentication", () => {
 
         await app.forgotPassword({ email: validData.email }, signal);
 
-        const token = await app.getTokenFromCache("passwordResetToken");
+        const token = await app.getTokenFromCache("PASSWORD_RESET_TOKEN");
         expect(token).toBeDefined();
 
         const newPassword = faker.internet.password({

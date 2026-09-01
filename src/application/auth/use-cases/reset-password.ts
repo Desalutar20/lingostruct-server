@@ -3,7 +3,7 @@ import { ICache } from "@/application/abstractions/cache/cache.interface.js";
 import { ICommandHandler } from "@/application/abstractions/cqrs/command-handler.interface.js";
 import { ICommand } from "@/application/abstractions/cqrs/command.interface.js";
 import { IPasswordHasher } from "@/application/abstractions/security/password-hasher.interface.js";
-import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
+import { AUTH_CACHE_KEYS } from "@/application/auth/const/auth-cache-keys.const.js";
 import { invalidTokenError, userNotFoundError } from "@/application/auth/auth-errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
 import { Email } from "@/domain/shared/value-objects/email.js";
@@ -30,7 +30,7 @@ export class ResetPasswordCommandHandler implements ICommandHandler<ResetPasswor
 
   handle(command: ResetPasswordCommand): ResultAsync<void> {
     return this.cache
-      .getDel<string>(authCacheKeys.passwordResetToken(command.token.value))
+      .getDel<string>(AUTH_CACHE_KEYS.PASSWORD_RESET_TOKEN(command.token.value))
       .andThen((id) => {
         if (id === null) return invalidTokenError;
 

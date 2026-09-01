@@ -1,6 +1,6 @@
 import { ISessionStore } from "@/application/abstractions/auth/session-store.interface.js";
 import { Session } from "@/application/abstractions/auth/session.type.js";
-import { authCacheKeys } from "@/application/auth/auth-cache-keys.js";
+import { AUTH_CACHE_KEYS } from "@/application/auth/const/auth-cache-keys.const.js";
 import { RedisConfig } from "@/application/config/redis.config.js";
 import { internal } from "@/domain/abstractions/errors.js";
 import { ResultAsync } from "@/domain/abstractions/result.js";
@@ -23,8 +23,8 @@ export class RedisSessionStore implements ISessionStore {
     session: Session,
     ttlSeconds: PositiveInt,
   ): ResultAsync<void> {
-    const sessionKey = authCacheKeys.session(sessionId);
-    const userSessionsKey = authCacheKeys.userSessions(userId);
+    const sessionKey = AUTH_CACHE_KEYS.SESSION(sessionId);
+    const userSessionsKey = AUTH_CACHE_KEYS.USER_SESSIONS(userId);
 
     const score = Date.now() + ttlSeconds.value * 1000;
 
@@ -40,7 +40,7 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   get(sessionId: UUID): ResultAsync<Session | null> {
-    return fromPromise(this.client.get(authCacheKeys.session(sessionId)), (err) =>
+    return fromPromise(this.client.get(AUTH_CACHE_KEYS.SESSION(sessionId)), (err) =>
       internal("Failed to get session from Redis", err),
     ).andThen((session) => {
       if (!session) return ok(null);
@@ -52,7 +52,7 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   getSessionIds(userId: UserId): ResultAsync<UUID[]> {
-    return fromPromise(this.client.zRange(authCacheKeys.userSessions(userId), 0, -1), (err) =>
+    return fromPromise(this.client.zRange(AUTH_CACHE_KEYS.USER_SESSIONS(userId), 0, -1), (err) =>
       internal("Failed to get Redis session IDs from Redis", err),
     ).andThen((values) => Rs.combine(values.map(UUID.create)));
   }
@@ -62,7 +62,7 @@ export class RedisSessionStore implements ISessionStore {
       .andThen((sessionIds) =>
         RsAsync.combine(
           sessionIds.map((sessionId) => {
-            const sessionKey = authCacheKeys.session(sessionId);
+            const sessionKey = AUTH_CACHE_KEYS.SESSION(sessionId);
 
             return fromPromise(
               this.client.set(sessionKey, JSON.stringify(session), {
@@ -77,8 +77,8 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   delete(userId: UserId, sessionId: UUID): ResultAsync<void> {
-    const sessionKey = authCacheKeys.session(sessionId);
-    const userSessionsKey = authCacheKeys.userSessions(userId);
+    const sessionKey = AUTH_CACHE_KEYS.SESSION(sessionId);
+    const userSessionsKey = AUTH_CACHE_KEYS.USER_SESSIONS(userId);
 
     return fromPromise(
       (async () => {
@@ -93,10 +93,10 @@ export class RedisSessionStore implements ISessionStore {
     return this.getSessionIds(userId).andThen((sessionIds) =>
       fromPromise(
         (async () => {
-          const userSessionsKey = authCacheKeys.userSessions(userId);
+          const userSessionsKey = AUTH_CACHE_KEYS.USER_SESSIONS(userId);
 
           await Promise.all(
-            sessionIds.map((sessionId) => this.client.del(authCacheKeys.session(sessionId))),
+            sessionIds.map((sessionId) => this.client.del(AUTH_CACHE_KEYS.SESSION(sessionId))),
           );
 
           await this.client.del(userSessionsKey);
@@ -110,11 +110,11 @@ export class RedisSessionStore implements ISessionStore {
     return fromPromise(
       (async () => {
         const sessionsKeyPrefix: ExtractPrefix<
-          ReturnType<(typeof authCacheKeys)["userSessions"]>,
+          ReturnType<(typeof AUTH_CACHE_KEYS)["USER_SESSIONS"]>,
           ":"
         > = `sessions:`;
         const sessionKeyPrefix: ExtractPrefix<
-          ReturnType<(typeof authCacheKeys)["session"]>,
+          ReturnType<(typeof AUTH_CACHE_KEYS)["SESSION"]>,
           ":"
         > = `session:`;
 

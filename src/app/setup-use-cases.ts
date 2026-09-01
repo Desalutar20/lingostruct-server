@@ -28,12 +28,17 @@ import { CreateWorkspaceCommandHandler } from "@/application/admin/workspace/use
 import { IWorkspaceRepository } from "@/domain/workspace/workspace-repository.interface.js";
 import { GetWorkspacesQueryHandlers } from "@/application/admin/workspace/use-cases/get-workspaces.js";
 import { UpdateWorkspaceCommandHandler } from "@/application/admin/workspace/use-cases/update-workspace.js";
+import { DeleteWorkspaceCommandHandler } from "@/application/admin/workspace/use-cases/delete-workspace.js";
+import { GetWorkspaceQueryHandler } from "@/application/workspace/use-cases/get-workspace.js";
+import { WorkspaceAccessAuthorizationCommandHandler } from "@/application/workspace/use-cases/workspace-authorization.js";
+import { IWorkspaceUserRepository } from "@/domain/workspace-user/workspace-user-repository.interface.js";
 
 export const setupUseCases = ({
   unitOfWork,
   userRepository,
   outboxRepository,
   workspaceRepository,
+  workspaceUserRepository,
   passwordHasher,
   tokenGenerator,
   cache,
@@ -46,6 +51,7 @@ export const setupUseCases = ({
   unitOfWork: IUnitOfWork;
   userRepository: IUserRepository;
   workspaceRepository: IWorkspaceRepository;
+  workspaceUserRepository: IWorkspaceUserRepository;
   outboxRepository: IOutboxRepository;
   passwordHasher: IPasswordHasher;
   tokenGenerator: ITokenGenerator;
@@ -112,9 +118,16 @@ export const setupUseCases = ({
       createPresignedUrl: new CreatePresignedUrlCommandHandler(objectStorage),
     },
     workspaces: {
+      workspaceAuthorization: new WorkspaceAccessAuthorizationCommandHandler(
+        workspaceUserRepository,
+        cache,
+        config,
+      ),
       getWorkspaces: new GetWorkspacesQueryHandlers(workspaceRepository),
-      createWorkspace: new CreateWorkspaceCommandHandler(workspaceRepository),
+      getWorkspace: new GetWorkspaceQueryHandler(workspaceRepository),
+      createWorkspace: new CreateWorkspaceCommandHandler(unitOfWork),
       updateWorkspace: new UpdateWorkspaceCommandHandler(workspaceRepository),
+      deleteWorkspace: new DeleteWorkspaceCommandHandler(workspaceRepository),
     },
   };
 };

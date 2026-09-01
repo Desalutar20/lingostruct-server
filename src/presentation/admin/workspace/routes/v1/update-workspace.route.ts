@@ -14,6 +14,7 @@ import { WorkspaceName } from "@/domain/workspace/workspace-name.js";
 import { WorkspaceAddress } from "@/domain/workspace/workspace-address.js";
 import { UpdateWorkspaceCommand } from "@/application/admin/workspace/use-cases/update-workspace.js";
 import { WorkspaceIdSchema } from "@/presentation/admin/workspace/schemas/workspace-id.schema.js";
+import { AdminWorkspaceSchema } from "@/presentation/admin/workspace/schemas/admin-workspace.schema.js";
 
 const UpdateWorkspaceRequestSchema = z
   .object({
@@ -27,6 +28,8 @@ const UpdateWorkspaceRequestSchema = z
     postalCode: NonEmptyStringSchema.max(WorkspaceAddress.postalCodeMaxLength).optional(),
   })
   .strict();
+
+const UpdateWorkspaceResponseSchema = SuccessResponseSchema(AdminWorkspaceSchema);
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.patch(
@@ -43,7 +46,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         params: WorkspaceIdSchema,
         body: UpdateWorkspaceRequestSchema,
         response: {
-          200: SuccessResponseSchema(z.string()),
+          200: UpdateWorkspaceResponseSchema,
           400: z.union([ErrorResponseSchema, ValidationErrorResponseSchema]),
         },
       },
@@ -68,7 +71,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
 
       reply.status(200).send({
         status: "success",
-        data: "Success",
+        data: result.value,
       });
     },
   );

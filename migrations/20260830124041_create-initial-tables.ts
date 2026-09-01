@@ -50,9 +50,32 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("street_number", "text", (col) => col.notNull())
     .addColumn("postal_code", "text", (col) => col.notNull())
     .execute();
+
+  await db.schema
+    .createTable("workspace_user")
+    .addColumn("id", "uuid", (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn("created_at", "timestamptz", (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn("updated_at", "timestamptz", (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn("role", "text", (col) => col.notNull())
+    .addColumn("workspace_id", "uuid", (col) =>
+      col.references("workspace.id").onDelete("cascade").onUpdate("cascade").notNull(),
+    )
+    .addColumn("user_id", "uuid", (col) =>
+      col.references("users.id").onDelete("cascade").onUpdate("cascade").notNull(),
+    )
+    .addCheckConstraint("ck_workspace_role", sql`role IN ('owner', 'admin', 'member')`)
+    .addUniqueConstraint("uq_workspace_user_workspace_id_user_id", ["workspace_id", "user_id"])
+    .execute();
+
+  await sql`
+      CREATE UNIQUE INDEX "uq_workspace_user_single_owner"
+      ON "workspace_user" ("workspace_id")
+      WHERE "role" = 'owner'
+    `.execute(db);
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
+  await db.schema.dropTable("workspace_user").execute();
   await db.schema.dropTable("workspace").execute();
   await db.schema.dropTable("outbox").execute();
   await db.schema.dropTable("users").execute();

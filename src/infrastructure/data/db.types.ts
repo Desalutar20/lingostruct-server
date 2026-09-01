@@ -5,9 +5,10 @@
 
 import type { ColumnType } from "kysely";
 
-export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
-  ? ColumnType<S, I | undefined, U>
-  : ColumnType<T, T | undefined, T>;
+export type Generated<T> =
+  T extends ColumnType<infer S, infer I, infer U>
+    ? ColumnType<S, I | undefined, U>
+    : ColumnType<T, T | undefined, T>;
 
 export type Json = JsonValue;
 
@@ -60,8 +61,18 @@ export interface Workspace {
   updatedAt: Generated<Timestamp>;
 }
 
+export interface WorkspaceUser {
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  role: string;
+  updatedAt: Generated<Timestamp>;
+  userId: string;
+  workspaceId: string;
+}
+
 export interface DB {
   outbox: Outbox;
   users: Users;
   workspace: Workspace;
+  workspaceUser: WorkspaceUser;
 }
