@@ -1,8 +1,6 @@
 from typing import ClassVar
 
-from pydantic import ValidationError
-
-from app.modules.shared.domain import InternalError, NonEmptyString
+from app.modules.shared.domain import InternalError, NonEmptyString, ValidationError
 
 
 class PasswordHash(NonEmptyString):
