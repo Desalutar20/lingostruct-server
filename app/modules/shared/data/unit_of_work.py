@@ -3,9 +3,6 @@ from typing import Self
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.modules.shared.outbox import OutboxRepository
-from app.modules.user.data import UserRepository
-
 
 class UnitOfWork:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
@@ -13,8 +10,6 @@ class UnitOfWork:
 
     async def __aenter__(self) -> Self:
         self.session = self.__session_factory()
-        self.users = UserRepository(self.session)
-        self.outbox = OutboxRepository(self.session)
 
         return self
 
@@ -24,9 +19,11 @@ class UnitOfWork:
         _exc_val: BaseException | None,
         _exc_tb: TracebackType | None,
     ) -> None:
-        if exc_type is not None:
-            await self.rollback()
-        await self.session.close()
+        try:
+            if exc_type is not None:
+                await self.rollback()
+        finally:
+            await self.session.close()
 
     async def commit(self) -> None:
         await self.session.commit()

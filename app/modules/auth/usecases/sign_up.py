@@ -2,17 +2,18 @@ import asyncio
 from dataclasses import dataclass
 
 from app.core.config import ApplicationConfig
+from app.core.database import Database
 from app.modules.auth.services.auth_cache import AuthCache
 from app.modules.shared.cqrs import ICommand, ICommandHandler
 from app.modules.shared.data import UnitOfWork
 from app.modules.shared.domain import Email, NonEmptyString
-from app.modules.shared.outbox import Outbox, OutboxType
+from app.modules.shared.outbox import Outbox, OutboxType, create_outbox
 from app.modules.shared.services import PasswordHasher, RandomTokenGenerator
 from app.modules.shared.services.email import (
     EmailMessageBuilder,
     EmailMessageConverter,
-    EmailService,
 )
+from app.modules.user.data import get_user_by_email, create_user
 from app.modules.user.domain import FirstName, LastName, Password, User
 
 
@@ -26,14 +27,13 @@ class SignUpCommand(ICommand):
 
 @dataclass
 class SignUpCommandHandler(ICommandHandler[SignUpCommand, None]):
-    email_service: EmailService
-    uow: UnitOfWork
+    database: Database
     auth_cache: AuthCache
     config: ApplicationConfig
 
     async def handle(self, command: SignUpCommand) -> None:
-        async with self.uow as uow:
-            user = await uow.users.get_by_email(command.email)
+        async with UnitOfWork(self.database.session_factory) as uow:
+            user = await get_user_by_email(uow.session, command.email)
             if user:
                 await asyncio.sleep(2)
                 return
@@ -51,8 +51,8 @@ class SignUpCommandHandler(ICommandHandler[SignUpCommand, None]):
             serialized = EmailMessageConverter.serialize(email_message)
             outbox = Outbox(OutboxType.EMAIL, NonEmptyString(serialized))
 
-            uow.users.create(new_user)
-            uow.outbox.create(outbox)
+            create_user(uow.session,new_user)
+            create_outbox(uow.session, outbox)
 
             await asyncio.gather(
                 uow.commit(),

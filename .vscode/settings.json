@@ -1,13 +1,20 @@
 {
   "cSpell.words": [
     "autoflush",
+    "fakedata",
     "getdel",
     "gmtime",
     "nonemptystring",
+    "pytest",
     "scopefunc",
     "sessionmaker",
     "urandom",
     "usecases",
     "valueobjects"
-  ]
+  ],
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

@@ -9,3 +9,6 @@
 
 @format:
     uv run ruff format
+
+@test:
+    pytest -n 5 -v

@@ -3,9 +3,15 @@ from typing import ClassVar
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from app.core.database import Database
 from app.core.logger import LOGGER
 from app.modules.shared.data import UnitOfWork
-from app.modules.shared.outbox import Outbox, OutboxID
+from app.modules.shared.outbox import (
+    Outbox,
+    OutboxID,
+    get_unprocessed_outboxes,
+    mark_outboxes_as_processed_bulk,
+)
 from app.modules.shared.services.email import (
     EmailMessageConverter,
     EmailService,
@@ -20,10 +26,13 @@ class OutboxEmailSender(BackgroundJob):
     __MAX_RETRIES: ClassVar[int] = 3
 
     def __init__(
-        self, scheduler: AsyncIOScheduler, uow: UnitOfWork, email_service: EmailService
+        self,
+        scheduler: AsyncIOScheduler,
+        database: Database,
+        email_service: EmailService,
     ):
 
-        self._uow = uow
+        self._database = database
         self._email_service = email_service
         self.job_id = "outbox_email_sender"
 
@@ -35,8 +44,8 @@ class OutboxEmailSender(BackgroundJob):
         )
 
     async def execute(self):
-        async with self._uow as uow:
-            outboxes = await uow.outbox.get_unprocessed(self.__BATCH_SIZE)
+        async with UnitOfWork(self._database.session_factory) as uow:
+            outboxes = await get_unprocessed_outboxes(uow.session, self.__BATCH_SIZE)
             if not outboxes:
                 return
 
@@ -56,7 +65,7 @@ class OutboxEmailSender(BackgroundJob):
                 start += self.__CHUNK_SIZE
 
             if ids:
-                await uow.outbox.mark_as_processed_bulk(ids)
+                await mark_outboxes_as_processed_bulk(uow.session, ids)
                 await uow.commit()
 
     async def send_email(self, outbox: Outbox) -> OutboxID | None:

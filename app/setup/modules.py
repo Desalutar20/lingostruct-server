@@ -5,7 +5,6 @@ from redis.asyncio import Redis
 from app.core.config import ApplicationConfig
 from app.core.database import Database
 from app.modules.auth import Module as AuthModule
-from app.modules.shared.data import UnitOfWork
 from app.modules.user import Module as UserModule
 
 from .services import Services
@@ -18,7 +17,6 @@ class Modules:
 
 
 def setup_modules(
-    uow: UnitOfWork,
     services: Services,
     database: Database,
     redis: Redis,
@@ -26,9 +24,8 @@ def setup_modules(
 ):
 
     auth_module = AuthModule(
-        services.email_service,
         services.redis_key_generator,
-        uow,
+        database,
         redis,
         config,
     )

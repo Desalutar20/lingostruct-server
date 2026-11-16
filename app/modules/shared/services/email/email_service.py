@@ -71,3 +71,5 @@ class EmailService:
             self._config.user,
             self._config.password,
         )
+
+    

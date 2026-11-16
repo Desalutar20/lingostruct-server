@@ -6,9 +6,8 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError as VE
 
 from app.core.logger import LOGGER
-from app.modules.shared.domain import DomainError, ValidationError
-from app.modules.shared.domain.exceptions.error_code import ErrorCode
-from app.modules.shared.schemas.response_schema import ErrorResponse
+from app.modules.shared.domain import DomainError, ErrorCode, ValidationError
+from app.modules.shared.schemas import ErrorResponse
 
 
 def add_exception_handlers(app: FastAPI):

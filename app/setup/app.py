@@ -5,7 +5,6 @@ from redis.asyncio import Redis
 
 from app.core.config import Config
 from app.core.database import Database, Model
-from app.modules.shared.data import UnitOfWork
 
 from .background_jobs import setup_background_jobs
 from .exception_handlers import add_exception_handlers
@@ -23,10 +22,9 @@ def build_app(config: Config):
         max_connections=10,
     )
 
-    uow = UnitOfWork(database.session_factory)
     services = setup_services(config)
-    modules = setup_modules(uow, services, database, redis, config.application)
-    scheduler = setup_background_jobs(services, uow)
+    modules = setup_modules(services, database, redis, config.application)
+    scheduler = setup_background_jobs(services, database)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -38,7 +36,7 @@ def build_app(config: Config):
         scheduler.shutdown()
         await redis.aclose()
         await database.dispose()
-        await services.email_service._disconnect()
+        await services.email_service.close()
 
     app = FastAPI(lifespan=lifespan)
 
