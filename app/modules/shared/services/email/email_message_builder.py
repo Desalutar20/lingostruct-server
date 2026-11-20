@@ -5,7 +5,6 @@ from app.core.config import ApplicationConfig
 from app.modules.shared.domain import Email, NonEmptyString
 
 from .email_message import EmailMessage
-from .email_message_converter import EmailMessageConverter
 
 
 class EmailMessageBuilder:
@@ -194,7 +193,3 @@ Thanks"""
             text,
             html,
         )
-
-    @staticmethod
-    def serialize_message(message: EmailMessage) -> NonEmptyString:
-        return NonEmptyString(EmailMessageConverter.serialize(message))

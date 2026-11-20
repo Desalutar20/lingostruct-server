@@ -1,5 +1,6 @@
 import pytest
 from fastapi import status
+from pydantic import SecretStr
 
 from app.modules.shared.domain import Email
 from app.modules.user.domain import FirstName, LastName, Password
@@ -21,7 +22,7 @@ class TestSignUp:
         user = await test_app.get_user_by_email(request.email)
 
         assert user is not None
-        assert user.password_hash != request.password
+        assert user["password_hash"] != request.password.get_secret_value()
 
     @pytest.mark.anyio
     @pytest.mark.parametrize(
@@ -35,16 +36,16 @@ class TestSignUp:
                 f"{'t' * Email.MAX_LENGTH}@gmail.com",
                 id="email exceeds maximum length",
             ),
-            pytest.param("password", "", id="empty password"),
-            pytest.param("password", "   ", id="whitespace password"),
+            pytest.param("password", SecretStr(""), id="empty password"),
+            pytest.param("password", SecretStr("   "), id="whitespace password"),
             pytest.param(
                 "password",
-                "t" * (Password.MIN_LENGTH - 1),
+                SecretStr("t" * (Password.MIN_LENGTH - 1)),
                 id="password too short",
             ),
             pytest.param(
                 "password",
-                "t" * (Password.MAX_LENGTH + 1),
+                SecretStr("t" * (Password.MAX_LENGTH + 1)),
                 id="password too long",
             ),
             pytest.param("first_name", "", id="empty first name"),
@@ -63,7 +64,7 @@ class TestSignUp:
             ),
         ],
     )
-    async def test_should_return_unprocessable_request_when_data_is_invalid(
+    async def test_should_return_bad_request_when_data_is_invalid(
         self,
         test_app: TestApp,
         field: str,
@@ -74,5 +75,5 @@ class TestSignUp:
 
         response = await test_app.sign_up(request)
 
-        TestApp.assert_valid_status(response, status.HTTP_422_UNPROCESSABLE_CONTENT)
+        TestApp.assert_valid_status(response, status.HTTP_400_BAD_REQUEST)
         TestApp.assert_validation_error(response, field)

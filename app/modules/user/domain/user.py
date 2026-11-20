@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from app.modules.shared.domain import Email, Entity, Url
+from app.modules.shared.domain import Email, Entity, FailureError, Url
 
 from .first_name import FirstName
 from .last_name import LastName
@@ -34,44 +34,60 @@ class User(Entity[UserID]):
         self.__github_id: ProviderID | None = None
 
     @property
-    def email(self):
+    def email(self) -> Email:
         return self.__email
 
     @property
-    def password_hash(self):
+    def password_hash(self) -> PasswordHash | None:
         return self.__password_hash
 
     @property
-    def first_name(self):
+    def first_name(self) -> FirstName | None:
         return self.__first_name
 
     @property
-    def last_name(self):
+    def last_name(self) -> LastName | None:
         return self.__last_name
 
     @property
-    def role(self):
+    def role(self) -> UserRole:
         return self.__role
 
     @property
-    def is_banned(self):
+    def is_banned(self) -> bool:
         return self.__is_banned
 
     @property
-    def is_verified(self):
+    def is_verified(self) -> bool:
         return self.__is_verified
 
     @property
-    def avatar_url(self):
+    def avatar_url(self) -> Url | None:
         return self.__avatar_url
 
     @property
-    def github_id(self):
+    def github_id(self) -> ProviderID | None:
         return self.__github_id
 
     @property
-    def google_id(self):
+    def google_id(self) -> ProviderID | None:
         return self.__google_id
+
+    @property
+    def is_valid(self) -> bool:
+        return self.is_verified and not self.is_banned
+
+    def verify(self):
+        if self.is_banned:
+            raise FailureError("User is banned")
+
+        self.__is_verified = True
+
+    def update_password(self, new_password: PasswordHash):
+        if not self.is_valid:
+            raise FailureError("User is banned or not verified")
+
+        self.__password_hash = new_password
 
     @classmethod
     def from_persistence(

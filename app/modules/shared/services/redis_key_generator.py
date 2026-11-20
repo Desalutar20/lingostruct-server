@@ -36,3 +36,6 @@ class RedisKeyGenerator:
 
     def sessions_key(self, user_id: UserID) -> str:
         return self._key_prefix + self.sessions_prefix() + str(user_id)
+
+    def sessions_pattern(self) -> str:
+        return self._key_prefix + self.sessions_prefix() + "*"

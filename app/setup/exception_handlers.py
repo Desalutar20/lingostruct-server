@@ -17,7 +17,7 @@ def add_exception_handlers(app: FastAPI):
 
     status_codes_by_code = {
         ErrorCode.FAILURE: HTTPStatus.BAD_REQUEST,
-        ErrorCode.VALIDATION: HTTPStatus.UNPROCESSABLE_ENTITY,
+        ErrorCode.VALIDATION: HTTPStatus.BAD_REQUEST,
         ErrorCode.UNAUTHORIZED: HTTPStatus.UNAUTHORIZED,
         ErrorCode.ACCESS_DENIED: HTTPStatus.FORBIDDEN,
         ErrorCode.INTERNAL: HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -52,7 +52,7 @@ def add_exception_handlers(app: FastAPI):
         )
 
         return JSONResponse(
-            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            status_code=HTTPStatus.BAD_REQUEST,
             content=response.model_dump(mode="json"),
         )
 
@@ -74,7 +74,7 @@ def add_exception_handlers(app: FastAPI):
             response.errors = errors
 
             return JSONResponse(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                status_code=HTTPStatus.BAD_REQUEST,
                 content=response.model_dump(mode="json"),
             )
 

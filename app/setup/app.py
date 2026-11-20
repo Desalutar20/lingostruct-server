@@ -1,20 +1,19 @@
 from contextlib import asynccontextmanager
 
+import asyncpg
 from fastapi import FastAPI
 from redis.asyncio import Redis
 
 from app.core.config import Config
-from app.core.database import Database, Model
 
 from .background_jobs import setup_background_jobs
 from .exception_handlers import add_exception_handlers
 from .modules import setup_modules
-from .routes import add_routes
+from .routes import add_middlewares, add_routes
 from .services import setup_services
 
 
 def build_app(config: Config):
-    database = Database(config.database)
     redis = Redis(
         host=config.redis.host,
         port=config.redis.port,
@@ -22,25 +21,27 @@ def build_app(config: Config):
         max_connections=10,
     )
 
-    services = setup_services(config)
-    modules = setup_modules(services, database, redis, config.application)
-    scheduler = setup_background_jobs(services, database)
-
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        async with database.engine.begin() as connection:
-            await connection.run_sync(Model.metadata.create_all)
+        pool = await asyncpg.create_pool(dsn=config.database.connection_string())
+
+        services = setup_services(config)
+        scheduler = setup_background_jobs(services, pool)
+        modules = setup_modules(services, pool, redis, scheduler, config)
+
+        add_routes(app, modules)
 
         scheduler.start()
         yield
+
         scheduler.shutdown()
         await redis.aclose()
-        await database.dispose()
+        await pool.close()
         await services.email_service.close()
 
     app = FastAPI(lifespan=lifespan)
 
+    add_middlewares(app, config.application)
     add_exception_handlers(app)
-    add_routes(app, config.application, modules)
 
     return app

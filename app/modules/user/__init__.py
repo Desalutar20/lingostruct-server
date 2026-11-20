@@ -1,6 +1,6 @@
-from app.core.database import Database
+from .data import UserRepository
 
 
 class Module:
-    def __init__(self, _database: Database):
-        pass
+    def __init__(self, pool):
+        self.repository = UserRepository(pool)

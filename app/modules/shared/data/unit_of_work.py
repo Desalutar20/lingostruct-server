@@ -1,15 +1,23 @@
 from types import TracebackType
 from typing import Self
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from asyncpg.transaction import TransactionState
+
+from app.modules.shared.outbox.outbox_repository import OutboxRepository
+from app.modules.user.data import UserRepository
 
 
 class UnitOfWork:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
-        self.__session_factory = session_factory
+    def __init__(self, pool):
+        self._pool = pool
 
     async def __aenter__(self) -> Self:
-        self.session = self.__session_factory()
+        self._con = await self._pool.acquire()
+        self._tr = self._con.transaction()
+        await self._tr.start()
+
+        self.users = UserRepository(self._pool, self._con)
+        self.outbox = OutboxRepository(self._pool, self._con)
 
         return self
 
@@ -19,14 +27,17 @@ class UnitOfWork:
         _exc_val: BaseException | None,
         _exc_tb: TracebackType | None,
     ) -> None:
+
         try:
-            if exc_type is not None:
-                await self.rollback()
+            if self._tr._state == TransactionState.STARTED:
+                print("ROLLBACK TRANSACTION")
+
+                await self._tr.rollback()
         finally:
-            await self.session.close()
+            await self._pool.release(self._con)
 
     async def commit(self) -> None:
-        await self.session.commit()
+        await self._tr.commit()
 
     async def rollback(self) -> None:
-        await self.session.rollback()
+        await self._tr.rollback()

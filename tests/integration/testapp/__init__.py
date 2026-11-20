@@ -1,3 +1,6 @@
+import asyncio
+import os
+import subprocess
 from uuid import uuid4
 
 import asyncpg
@@ -6,7 +9,6 @@ from asgi_lifespan import LifespanManager
 from redis.asyncio import Redis
 
 from app.core.config import Config
-from app.core.database import Database
 from app.setup import build_app
 
 
@@ -14,8 +16,16 @@ class TestApp:
     __test__ = False
 
     from ._assertions import assert_valid_status, assert_validation_error
-    from ._auth_requests import sign_up
-    from ._db_requests import get_user_by_email
+    from ._auth_requests import (
+        create_and_verify,
+        forgot_password,
+        reset_password,
+        sign_in,
+        sign_up,
+        verify_account,
+    )
+    from ._db_requests import ban_user_by_email, get_outboxes_by_type, get_user_by_email
+    from ._redis_requests import get_redis_token, set_redis_value
 
     assert_valid_status = staticmethod(assert_valid_status)
     assert_validation_error = staticmethod(assert_validation_error)
@@ -23,42 +33,56 @@ class TestApp:
     def __init__(self):
         config = Config()
 
-        self.redis_key_prefix = uuid4().hex
         self.config = config.model_copy(
             update={
                 "database": config.database.model_copy(
                     update={"name": f"test_{uuid4().hex}"},
                 ),
                 "redis": config.redis.model_copy(
-                    update={"key_prefix": self.redis_key_prefix},
+                    update={"key_prefix": uuid4().hex},
                 ),
             }
         )
 
-        self.admin_connection: asyncpg.Connection | None = None
+        self.admin_connection: asyncpg.Connection
 
-        self.database: Database
         self.redis: Redis
 
         self.client: httpx.AsyncClient
-        self._lifespan: LifespanManager | None = None
+        self._lifespan: LifespanManager
 
     async def __aenter__(self):
         try:
             self.admin_connection = await asyncpg.connect(
-                host=self.config.database.host,
-                port=self.config.database.port,
-                user=self.config.database.user,
-                password=self.config.database.password.get_secret_value(),
-                database="postgres",
-                ssl="require" if self.config.database.ssl else None,
+                dsn=self.config.database.connection_string_without_database()
             )
 
             await self.admin_connection.execute(
                 f'CREATE DATABASE "{self.config.database.name}"'
             )
 
-            self.database = Database(self.config.database)
+            envs = os.environ
+            envs["GOOSE_DBSTRING"] = (
+                f"user={self.config.database.user} password={self.config.database.password.get_secret_value()} host={self.config.database.host} port={self.config.database.port} dbname={self.config.database.name} sslmode=disable"
+            )
+            proc = await asyncio.create_subprocess_exec(
+                "goose",
+                "up",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=envs,
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode != 0:
+                raise RuntimeError(
+                    f"Goose migrations failed:\n{stdout.decode()}\n{stderr.decode()}"
+                )
+
+            self.pool = await asyncpg.create_pool(
+                dsn=self.config.database.connection_string(), min_size=1, max_size=5
+            )
 
             self.redis = Redis(
                 host=self.config.redis.host,
@@ -72,7 +96,9 @@ class TestApp:
             manager = await self._lifespan.__aenter__()
 
             self.client = httpx.AsyncClient(
-                transport=httpx.ASGITransport(app=manager.app),
+                transport=httpx.ASGITransport(
+                    app=manager.app, raise_app_exceptions=False
+                ),
                 base_url="http://test",
             )
 
@@ -91,18 +117,17 @@ class TestApp:
 
         if self._lifespan is not None:
             await self._lifespan.__aexit__(exc_type, exc, tb)
-            self._lifespan = None
 
         if self.redis is not None:
             async for key in self.redis.scan_iter(
-                match=f"{self.redis_key_prefix}*",
+                match=f"{self.config.redis.key_prefix}*",
             ):
                 await self.redis.unlink(key)
 
             await self.redis.aclose()
 
-        if self.database is not None:
-            await self.database.dispose()
+        if self.pool is not None:
+            await self.pool.close()
 
         if self.admin_connection is not None:
             await self.admin_connection.execute(
@@ -120,4 +145,3 @@ class TestApp:
             )
 
             await self.admin_connection.close()
-            self.admin_connection = None

@@ -5,7 +5,9 @@ from app.modules.shared.domain import InternalError, NonEmptyString
 
 class OutboxType(NonEmptyString):
     EMAIL: ClassVar["OutboxType"]
-    _VALID_TYPES: ClassVar[frozenset[str]] = frozenset({"email"})
+    FORGOT_PASSWORD: ClassVar["OutboxType"]
+
+    _VALID_TYPES: ClassVar[frozenset[str]] = frozenset({"email", "forgot_password"})
 
     def __init__(self, value: str):
         super().__init__(
@@ -24,3 +26,4 @@ class OutboxType(NonEmptyString):
 
 
 OutboxType.EMAIL = OutboxType("email")
+OutboxType.FORGOT_PASSWORD = OutboxType("forgot_password")

@@ -1,16 +1,33 @@
 {
   "cSpell.words": [
+    "aiosmtplib",
+    "apscheduler",
+    "asgi",
+    "asyncio",
+    "asyncpg",
     "autoflush",
+    "DBSTRING",
     "fakedata",
+    "fastapi",
+    "fetchrow",
+    "fetсh",
     "getdel",
     "gmtime",
+    "lingostruct",
     "nonemptystring",
+    "pydantic",
     "pytest",
     "scopefunc",
     "sessionmaker",
+    "sqlalchemy",
     "urandom",
     "usecases",
-    "valueobjects"
+    "uvicorn",
+    "valueobjects",
+    "xdist",
+    "zadd",
+    "zrangebyscore",
+    "zrem"
   ],
   "python.testing.pytestArgs": [
     "tests"

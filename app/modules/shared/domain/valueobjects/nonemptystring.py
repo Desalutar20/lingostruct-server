@@ -44,7 +44,7 @@ class NonEmptyString:
         self.__value = value
 
     @property
-    def value(self):
+    def value(self) -> str:
         return self.__value
 
     def __setattr__(self, name: str, value: object) -> None:

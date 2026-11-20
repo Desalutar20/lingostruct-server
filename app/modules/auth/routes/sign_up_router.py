@@ -23,7 +23,7 @@ class SignUpRequest(BaseModel):
     def to_command(self):
         return SignUpCommand(
             Email(self.email, True),
-            Password(self.password, True),
+            Password(self.password.get_secret_value(), True),
             FirstName(self.first_name, True),
             LastName(self.last_name, True),
         )

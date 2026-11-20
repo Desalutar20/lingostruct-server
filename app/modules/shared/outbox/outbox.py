@@ -17,15 +17,15 @@ class Outbox(Entity[OutboxID]):
         self.__processed_at: datetime | None = None
 
     @property
-    def type(self):
+    def type(self) -> OutboxType:
         return self.__type
 
     @property
-    def data(self):
+    def data(self) -> NonEmptyString:
         return self.__data
 
     @property
-    def processed_at(self):
+    def processed_at(self) -> datetime | None:
         return self.__processed_at
 
     def mark_as_processed(self):
